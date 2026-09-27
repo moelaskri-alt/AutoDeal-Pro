@@ -21,11 +21,19 @@ function stamp(): string {
 }
 
 /** Consistent online backup using SQLite's VACUUM INTO (works while the app is running). */
-export function createBackup(db: Db, dir: string, kind: 'manual' | 'auto' | 'pre_restore', userId?: number | null): BackupInfo {
+export function createBackup(
+  db: Db,
+  dir: string,
+  kind: 'manual' | 'auto' | 'pre_restore',
+  userId?: number | null,
+  /** Runs before the snapshot so entries it writes (e.g. the audit log line) are included in the backup itself. */
+  beforeSnapshot?: (file: string) => void,
+): BackupInfo {
   fs.mkdirSync(dir, { recursive: true });
   let file = path.join(dir, `AutoDealPro-${kind}-${stamp()}${BACKUP_EXT}`);
   let n = 1;
   while (fs.existsSync(file)) file = path.join(dir, `AutoDealPro-${kind}-${stamp()}-${n++}${BACKUP_EXT}`);
+  beforeSnapshot?.(file);
   db.exec(`VACUUM INTO '${file.replace(/'/g, "''")}'`);
   const size = fs.statSync(file).size;
   try {

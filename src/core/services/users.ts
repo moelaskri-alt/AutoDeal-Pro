@@ -172,7 +172,7 @@ export function resetPassword(db: Db, ctx: Ctx, input: { id: number; password: s
 
 export function changeOwnPassword(db: Db, ctx: Ctx, input: { current: string; password: string }) {
   const u = db.get<any>('SELECT password_hash FROM users WHERE id = ?', [ctx.user.id]);
-  if (!u || !verifyPassword(input.current ?? '', u.password_hash)) fail('AUTH', 'كلمة المرور الحالية غير صحيحة.');
+  if (!u || !verifyPassword(input.current ?? '', u.password_hash)) fail('VALIDATION', 'كلمة المرور الحالية غير صحيحة.');
   const pwErr = validatePasswordStrength(input.password);
   if (pwErr) fail('VALIDATION', pwErr);
   db.tx(() => {
