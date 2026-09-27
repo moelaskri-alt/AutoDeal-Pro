@@ -37,5 +37,63 @@
     "typescript": "^5.9.3",
     "vite": "^6.4.3",
     "vitest": "^3.2.7"
+  },
+  "homepage": "https://github.com/moelaskri-alt/autodeal-pro",
+  "build": {
+    "appId": "com.autodeal.pro",
+    "productName": "AutoDeal Pro",
+    "copyright": "Copyright © 2026 AutoDeal Pro",
+    "directories": {
+      "output": "release",
+      "buildResources": "build-resources"
+    },
+    "files": [
+      "build/**/*",
+      "!build/**/*.map",
+      "build-resources/icon.png",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build-resources/icon.png",
+      "executableName": "AutoDealPro",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AutoDeal Pro",
+      "menuCategory": false,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "installerLanguages": [
+        "ar_SA",
+        "en_US"
+      ],
+      "language": "1025",
+      "multiLanguageInstaller": true,
+      "artifactName": "AutoDealPro-Setup-${version}.exe",
+      "uninstallDisplayName": "AutoDeal Pro",
+      "include": "build-resources/installer.nsh"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Office",
+      "icon": "build-resources/icon.png"
+    }
   }
 }

@@ -522,6 +522,22 @@ LEFT JOIN vehicle_expenses e ON e.vehicle_id = v.id AND e.deleted_at IS NULL
 GROUP BY v.id;
 `,
   },
+  {
+    version: 2,
+    name: 'faster cost view (correlated, index-backed)',
+    // The GROUP BY view forced a full aggregation for every paged list; this form lets SQLite
+    // compute costs only for the rows actually returned, using a covering index.
+    sql: `
+DROP VIEW v_vehicle_cost;
+CREATE INDEX ix_vexp_cost ON vehicle_expenses(vehicle_id, deleted_at, category, amount);
+CREATE VIEW v_vehicle_cost AS
+SELECT v.id AS vehicle_id,
+  (SELECT COALESCE(SUM(e.amount), 0) FROM vehicle_expenses e WHERE e.vehicle_id = v.id AND e.deleted_at IS NULL AND e.category IN ('purchase','trade_in')) AS acquisition_cost,
+  (SELECT COALESCE(SUM(e.amount), 0) FROM vehicle_expenses e WHERE e.vehicle_id = v.id AND e.deleted_at IS NULL AND e.category NOT IN ('purchase','trade_in')) AS direct_costs,
+  (SELECT COALESCE(SUM(e.amount), 0) FROM vehicle_expenses e WHERE e.vehicle_id = v.id AND e.deleted_at IS NULL) AS actual_cost
+FROM vehicles v;
+`,
+  },
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;

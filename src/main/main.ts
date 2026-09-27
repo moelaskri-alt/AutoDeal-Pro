@@ -268,7 +268,7 @@ function registerIpc() {
 
 // ------------------------------------------------------------------ windows
 function createSplash() {
-  splash = new BrowserWindow({ width: 420, height: 260, frame: false, resizable: false, show: false, center: true, backgroundColor: '#1e3a5f', skipTaskbar: true, alwaysOnTop: true, icon: fs.existsSync(iconPath) ? iconPath : undefined });
+  splash = new BrowserWindow({ width: 420, height: 260, frame: false, resizable: false, show: false, center: true, backgroundColor: '#1e3a5f', icon: fs.existsSync(iconPath) ? iconPath : undefined });
   const html = `<!doctype html><html dir="rtl"><body style="margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1e3a5f;color:#fff;font-family:'Segoe UI',Tahoma,sans-serif">
     <div style="width:64px;height:64px;border-radius:16px;background:#fff;color:#1e3a5f;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">AD</div>
     <h1 style="margin:14px 0 2px;font-size:24px;letter-spacing:.5px">AutoDeal Pro</h1><div style="opacity:.8">نظام إدارة معارض السيارات</div>
@@ -294,18 +294,27 @@ function createMainWindow() {
   mainWin.webContents.on('will-navigate', (e, url) => {
     if (!url.startsWith('file://')) e.preventDefault();
   });
-  mainWin.once('ready-to-show', () => {
-    if (!process.env.AUTODEAL_E2E) mainWin?.maximize();
-    mainWin?.show();
+  const reveal = () => {
+    if (!mainWin || mainWin.isVisible()) return;
+    if (!process.env.AUTODEAL_E2E) mainWin.maximize();
+    mainWin.show();
     splash?.destroy();
     splash = null;
-  });
+  };
+  mainWin.once('ready-to-show', reveal);
+  // Safety net: never leave the user with an invisible app if the GPU/compositor is slow to report readiness.
+  setTimeout(() => {
+    if (mainWin && !mainWin.isVisible()) log('WARN', 'ready-to-show not received after 10s – showing window anyway');
+    reveal();
+  }, 10000);
   mainWin.on('closed', () => (mainWin = null));
   mainWin.loadFile(rendererIndex);
 }
 
 // ------------------------------------------------------------------ lifecycle
+log('INFO', `Starting ${APP_NAME} ${app.getVersion()} (pid ${process.pid}, electron ${process.versions.electron})`);
 if (!app.requestSingleInstanceLock()) {
+  log('INFO', 'Another instance is already running – focusing it and exiting.');
   app.quit();
 } else {
   app.on('second-instance', () => {
@@ -319,8 +328,8 @@ if (!app.requestSingleInstanceLock()) {
   process.on('unhandledRejection', (e) => log('ERROR', 'unhandledRejection', e));
 
   app.whenReady().then(() => {
+    log('INFO', 'App ready');
     Menu.setApplicationMenu(null);
-    if (!process.env.AUTODEAL_E2E) createSplash();
     try {
       openDatabase();
     } catch (e) {
@@ -330,6 +339,7 @@ if (!app.requestSingleInstanceLock()) {
       return;
     }
     registerIpc();
+    if (!process.env.AUTODEAL_E2E) createSplash();
     runAutoBackup('startup');
     setInterval(() => runAutoBackup('interval'), 30 * 60 * 1000).unref();
     createMainWindow();
