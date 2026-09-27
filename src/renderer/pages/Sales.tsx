@@ -174,7 +174,8 @@ export function NewSalePage() {
       const res = r.rows.find((x: any) => x.vehicle_id === vehicle.id);
       setReservation(res ?? null);
       if (res && !customer) setCustomer({ id: res.customer_id, code: res.customer_code, name: res.customer_name, phone: res.customer_phone });
-      if (res?.agreed_price) set('list_price', res.agreed_price);
+      // The agreed reservation price is already net of any quotation discount: use it as the price with no extra discount.
+      if (res?.agreed_price) setS((x: any) => ({ ...x, list_price: res.agreed_price, discount: 0 }));
     });
   }, [vehicle?.id]);
 
