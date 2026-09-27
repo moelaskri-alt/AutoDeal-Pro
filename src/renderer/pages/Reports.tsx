@@ -151,10 +151,12 @@ function ReportView({ def }: { def: any }) {
       <div className="toolbar">
         {hasDate && (
           <>
-            <span className="muted small">من</span>
-            <DateInput value={filters.from} onChange={(v) => set('from', v)} />
-            <span className="muted small">إلى</span>
-            <DateInput value={filters.to} onChange={(v) => set('to', v)} />
+            <div className="tb-dates">
+              <span className="muted small">من</span>
+              <DateInput value={filters.from} onChange={(v) => set('from', v)} />
+              <span className="muted small">إلى</span>
+              <DateInput value={filters.to} onChange={(v) => set('to', v)} />
+            </div>
             <button className="btn sm ghost" onClick={() => setFilters((f: any) => ({ ...f, from: monthStart(), to: undefined }))}>
               هذا الشهر
             </button>
@@ -164,17 +166,17 @@ function ReportView({ def }: { def: any }) {
           </>
         )}
         {def.filters.includes('brand') && (
-          <div style={{ minWidth: 150 }}>
+          <div className="tb-filter">
             <Select value={filters.brand} onChange={(v) => set('brand', v)} placeholder="كل الماركات" options={(brands.data ?? []).map((b) => [b, b])} />
           </div>
         )}
         {def.filters.includes('condition') && (
-          <div style={{ minWidth: 140 }}>
+          <div className="tb-filter">
             <Select value={filters.condition} onChange={(v) => set('condition', v)} placeholder="جديدة ومستعملة" options={optionsOf('condition')} />
           </div>
         )}
         {def.filters.includes('vstatus') && (
-          <div style={{ minWidth: 150 }}>
+          <div className="tb-filter">
             <Select
               value={filters.vstatus}
               onChange={(v) => set('vstatus', v)}
@@ -184,12 +186,12 @@ function ReportView({ def }: { def: any }) {
           </div>
         )}
         {def.filters.includes('sale_type') && (
-          <div style={{ minWidth: 150 }}>
+          <div className="tb-filter">
             <Select value={filters.sale_type} onChange={(v) => set('sale_type', v)} placeholder="كل طرق البيع" options={optionsOf('sale_type')} />
           </div>
         )}
         {def.filters.includes('salesperson') && (
-          <div style={{ minWidth: 150 }}>
+          <div className="tb-filter">
             <Select
               value={filters.salesperson_id}
               onChange={(v) => set('salesperson_id', v)}
@@ -199,7 +201,7 @@ function ReportView({ def }: { def: any }) {
           </div>
         )}
         {def.filters.includes('supplier') && (
-          <div style={{ minWidth: 160 }}>
+          <div className="tb-filter">
             <Select
               value={filters.supplier_id}
               onChange={(v) => set('supplier_id', v)}
@@ -209,7 +211,7 @@ function ReportView({ def }: { def: any }) {
           </div>
         )}
         {def.filters.includes('category') && (
-          <div style={{ minWidth: 150 }}>
+          <div className="tb-filter">
             <Select
               value={filters.category}
               onChange={(v) => set('category', v)}
@@ -219,7 +221,7 @@ function ReportView({ def }: { def: any }) {
           </div>
         )}
         {def.filters.includes('customer') && (
-          <div style={{ minWidth: 300 }}>
+          <div className="tb-picker">
             <CustomerPicker value={customer} onChange={setCustomer} />
           </div>
         )}

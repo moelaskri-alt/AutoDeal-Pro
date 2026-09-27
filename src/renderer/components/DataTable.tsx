@@ -108,16 +108,15 @@ export function DataTable<T = any>(p: Props<T>) {
     <div className="card">
       <div className="toolbar">
         {!p.noSearch && (
-          <div style={{ position: 'relative', flex: 1, maxWidth: 360, minWidth: 220 }}>
+          <div className="tb-search">
             <input
               className="input search"
-              style={{ width: '100%', paddingInlineStart: 34 }}
               placeholder={p.searchPlaceholder ?? 'بحث...'}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="بحث"
             />
-            <span style={{ position: 'absolute', insetInlineStart: 10, top: 10, color: '#9ca3af' }}>
+            <span className="tb-search-icon">
               <Icon name="search" size={16} />
             </span>
           </div>
@@ -125,30 +124,16 @@ export function DataTable<T = any>(p: Props<T>) {
         {p.filters?.map((f) => {
           if (f.type === 'dates')
             return (
-              <div key="dates" className="row" style={{ gap: 6 }}>
+              <div key="dates" className="tb-dates">
                 <span className="muted small">{f.label}</span>
-                <input
-                  className="input ltr"
-                  type="date"
-                  aria-label="من تاريخ"
-                  value={filters.from ?? ''}
-                  onChange={(e) => setF('from', e.target.value)}
-                  style={{ minWidth: 140 }}
-                />
+                <input className="input ltr" type="date" aria-label="من تاريخ" value={filters.from ?? ''} onChange={(e) => setF('from', e.target.value)} />
                 <span className="muted small">إلى</span>
-                <input
-                  className="input ltr"
-                  type="date"
-                  aria-label="إلى تاريخ"
-                  value={filters.to ?? ''}
-                  onChange={(e) => setF('to', e.target.value)}
-                  style={{ minWidth: 140 }}
-                />
+                <input className="input ltr" type="date" aria-label="إلى تاريخ" value={filters.to ?? ''} onChange={(e) => setF('to', e.target.value)} />
               </div>
             );
           if (f.type === 'customer')
             return (
-              <div key={f.key} style={{ minWidth: 240, maxWidth: 320 }} title={f.label}>
+              <div key={f.key} className="tb-picker" title={f.label}>
                 <CustomerPicker
                   value={customer}
                   onChange={(c) => {
@@ -160,7 +145,7 @@ export function DataTable<T = any>(p: Props<T>) {
             );
           if (f.type === 'checkbox')
             return (
-              <label key={f.key} className="checkbox small">
+              <label key={f.key} className="checkbox small tb-check">
                 <input type="checkbox" checked={!!filters[f.key]} onChange={(e) => setF(f.key, e.target.checked)} /> {f.label}
               </label>
             );
@@ -171,14 +156,16 @@ export function DataTable<T = any>(p: Props<T>) {
                 ? (salespeople.data ?? []).map((u) => [u.id, u.full_name])
                 : (f as any).options;
           return (
-            <select key={f.key} className="input" aria-label={f.label} value={filters[f.key] ?? ''} onChange={(e) => setF(f.key, e.target.value)}>
-              <option value="">{f.label}: الكل</option>
-              {options.map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
+            <div key={f.key} className="tb-filter">
+              <select className="input" aria-label={f.label} title={f.label} value={filters[f.key] ?? ''} onChange={(e) => setF(f.key, e.target.value)}>
+                <option value="">{f.label}: الكل</option>
+                {options.map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {f.label}: {l}
+                  </option>
+                ))}
+              </select>
+            </div>
           );
         })}
         {hasFilter && (
@@ -193,17 +180,20 @@ export function DataTable<T = any>(p: Props<T>) {
             مسح الفلاتر
           </button>
         )}
-        <div className="spacer" />
-        {p.toolbar}
-        {p.exportTitle && (
-          <>
-            <button className="btn sm" disabled={exporting || !data?.total} onClick={() => doExport('xlsx')} title="تصدير Excel">
-              <Icon name="download" /> Excel
-            </button>
-            <button className="btn sm" disabled={exporting || !data?.total} onClick={() => doExport('csv')} title="تصدير CSV">
-              <Icon name="download" /> CSV
-            </button>
-          </>
+        {(p.toolbar || p.exportTitle) && (
+          <div className="tb-actions">
+            {p.toolbar}
+            {p.exportTitle && (
+              <>
+                <button className="btn sm" disabled={exporting || !data?.total} onClick={() => doExport('xlsx')} title="تصدير Excel">
+                  <Icon name="download" /> Excel
+                </button>
+                <button className="btn sm" disabled={exporting || !data?.total} onClick={() => doExport('csv')} title="تصدير CSV">
+                  <Icon name="download" /> CSV
+                </button>
+              </>
+            )}
+          </div>
         )}
       </div>
       <ErrorAlert error={error} />

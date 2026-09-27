@@ -441,10 +441,12 @@ export function StatementView({ customerId }: { customerId: number }) {
   return (
     <div className="card">
       <div className="toolbar">
-        <span className="muted small">من</span>
-        <DateInput value={from} onChange={setFrom} />
-        <span className="muted small">إلى</span>
-        <DateInput value={to} onChange={setTo} />
+        <div className="tb-dates">
+          <span className="muted small">من</span>
+          <DateInput value={from} onChange={setFrom} />
+          <span className="muted small">إلى</span>
+          <DateInput value={to} onChange={setTo} />
+        </div>
         <div className="spacer" />
         <button className="btn sm" onClick={() => print('statement', customerId, 'preview', { from: from || undefined, to: to || undefined })}>
           <Icon name="printer" /> طباعة
