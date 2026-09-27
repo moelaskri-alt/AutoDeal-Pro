@@ -1,9 +1,18 @@
 name: build
 
+# Runs on every push (all branches), on manual dispatch, and on version tags (v*).
+# - job "test":              typecheck + unit tests + end-to-end UI tests (Linux, Xvfb)
+# - job "windows-installer": unit tests + builds the NSIS installer on Windows and uploads it
+#                            as the artifact "AutoDealPro-Setup-<version>" (file AutoDealPro-Setup-<version>.exe)
+# - job "release":           only for tags v<version>: attaches the installer to the GitHub Release of that tag
 on:
   push:
     branches: ['**']
+    tags: ['v*']
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -31,6 +40,8 @@ jobs:
 
   windows-installer:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,8 +50,46 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run dist:win
-      - uses: actions/upload-artifact@v4
+      - name: Read version from package.json
+        id: version
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      # --publish never (inside dist:win): electron-builder must NOT try to publish to GitHub on CI.
+      - name: Build Windows installer
+        run: npm run dist:win
+      - name: Verify installer exists
+        shell: bash
+        run: |
+          f="release/AutoDealPro-Setup-${{ steps.version.outputs.version }}.exe"
+          test -f "$f" || { echo "::error::$f was not produced"; ls -la release; exit 1; }
+          ls -la "$f"
+          size=$(stat -c %s "$f")
+          [ "$size" -gt 50000000 ] || { echo "::error::installer too small ($size bytes)"; exit 1; }
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: AutoDealPro-Windows-Installer
-          path: release/*.exe
+          name: AutoDealPro-Setup-${{ steps.version.outputs.version }}
+          path: release/AutoDealPro-Setup-${{ steps.version.outputs.version }}.exe
+          if-no-files-found: error
+          retention-days: 90
+
+  release:
+    # Publishes the installer as a release asset ONLY when a tag like v1.0.0 is pushed.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test, windows-installer]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check tag matches package.json version
+        run: |
+          [ "${GITHUB_REF_NAME}" = "v${{ needs.windows-installer.outputs.version }}" ] || { echo "::error::tag ${GITHUB_REF_NAME} != v${{ needs.windows-installer.outputs.version }}"; exit 1; }
+      - uses: actions/download-artifact@v4
+        with:
+          name: AutoDealPro-Setup-${{ needs.windows-installer.outputs.version }}
+          path: dist
+      - name: Attach installer to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/AutoDealPro-Setup-${{ needs.windows-installer.outputs.version }}.exe
+          fail_on_unmatched_files: true
