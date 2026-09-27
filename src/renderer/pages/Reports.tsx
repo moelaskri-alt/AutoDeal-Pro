@@ -40,16 +40,28 @@ export function ReportsPage() {
         actions={
           def && (
             <>
-              <select className="input" style={{ width: 300 }} aria-label="اختيار التقرير" value={current ?? ''} onChange={(e) => setParams({ id: e.target.value })}>
+              <select
+                className="input"
+                style={{ width: 300 }}
+                aria-label="اختيار التقرير"
+                value={current ?? ''}
+                onChange={(e) => setParams({ id: e.target.value })}
+              >
                 {groups.map((g) => (
                   <optgroup key={g} label={g}>
-                    {(list ?? []).filter((r) => r.group === g).map((r) => (
-                      <option key={r.id} value={r.id}>{r.title}</option>
-                    ))}
+                    {(list ?? [])
+                      .filter((r) => r.group === g)
+                      .map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.title}
+                        </option>
+                      ))}
                   </optgroup>
                 ))}
               </select>
-              <button className="btn" onClick={() => setParams({})}>كل التقارير</button>
+              <button className="btn" onClick={() => setParams({})}>
+                كل التقارير
+              </button>
             </>
           )
         }
@@ -61,17 +73,23 @@ export function ReportsPage() {
           <div key={g}>
             <div className="section-title">{g}</div>
             <div className="report-cards">
-              {(list ?? []).filter((r) => r.group === g).map((r) => (
-                <button key={r.id} className="report-card" onClick={() => setParams({ id: r.id })}>
-                  <b>{r.title}</b>
-                  <span>{r.description}</span>
-                </button>
-              ))}
+              {(list ?? [])
+                .filter((r) => r.group === g)
+                .map((r) => (
+                  <button key={r.id} className="report-card" onClick={() => setParams({ id: r.id })}>
+                    <b>{r.title}</b>
+                    <span>{r.description}</span>
+                  </button>
+                ))}
             </div>
           </div>
         ))
       )}
-      {!def && !(list ?? []).length && <div className="card"><EmptyState icon="chart" title="لا توجد تقارير متاحة لصلاحياتك" /></div>}
+      {!def && !(list ?? []).length && (
+        <div className="card">
+          <EmptyState icon="chart" title="لا توجد تقارير متاحة لصلاحياتك" />
+        </div>
+      )}
     </div>
   );
 }
@@ -117,10 +135,18 @@ function ReportView({ def }: { def: any }) {
           <div className="muted small">{def.description}</div>
         </div>
         <div className="spacer" />
-        <button className="btn sm" disabled={busy} onClick={() => out('print.report', { mode: 'preview' })}><Icon name="printer" /> طباعة</button>
-        <button className="btn sm" disabled={busy} onClick={() => out('print.report', { mode: 'pdf' })}><Icon name="download" /> PDF</button>
-        <button className="btn sm" disabled={busy || !data?.rows.length} onClick={() => out('export.report', { format: 'xlsx' })}><Icon name="download" /> Excel</button>
-        <button className="btn sm" disabled={busy || !data?.rows.length} onClick={() => out('export.report', { format: 'csv' })}><Icon name="download" /> CSV</button>
+        <button className="btn sm" disabled={busy} onClick={() => out('print.report', { mode: 'preview' })}>
+          <Icon name="printer" /> طباعة
+        </button>
+        <button className="btn sm" disabled={busy} onClick={() => out('print.report', { mode: 'pdf' })}>
+          <Icon name="download" /> PDF
+        </button>
+        <button className="btn sm" disabled={busy || !data?.rows.length} onClick={() => out('export.report', { format: 'xlsx' })}>
+          <Icon name="download" /> Excel
+        </button>
+        <button className="btn sm" disabled={busy || !data?.rows.length} onClick={() => out('export.report', { format: 'csv' })}>
+          <Icon name="download" /> CSV
+        </button>
       </div>
       <div className="toolbar">
         {hasDate && (
@@ -129,18 +155,74 @@ function ReportView({ def }: { def: any }) {
             <DateInput value={filters.from} onChange={(v) => set('from', v)} />
             <span className="muted small">إلى</span>
             <DateInput value={filters.to} onChange={(v) => set('to', v)} />
-            <button className="btn sm ghost" onClick={() => setFilters((f: any) => ({ ...f, from: monthStart(), to: undefined }))}>هذا الشهر</button>
-            <button className="btn sm ghost" onClick={() => setFilters((f: any) => ({ ...f, from: undefined, to: undefined }))}>كل الفترات</button>
+            <button className="btn sm ghost" onClick={() => setFilters((f: any) => ({ ...f, from: monthStart(), to: undefined }))}>
+              هذا الشهر
+            </button>
+            <button className="btn sm ghost" onClick={() => setFilters((f: any) => ({ ...f, from: undefined, to: undefined }))}>
+              كل الفترات
+            </button>
           </>
         )}
-        {def.filters.includes('brand') && <div style={{ minWidth: 150 }}><Select value={filters.brand} onChange={(v) => set('brand', v)} placeholder="كل الماركات" options={(brands.data ?? []).map((b) => [b, b])} /></div>}
-        {def.filters.includes('condition') && <div style={{ minWidth: 140 }}><Select value={filters.condition} onChange={(v) => set('condition', v)} placeholder="جديدة ومستعملة" options={optionsOf('condition')} /></div>}
-        {def.filters.includes('vstatus') && <div style={{ minWidth: 150 }}><Select value={filters.vstatus} onChange={(v) => set('vstatus', v)} placeholder="كل الحالات" options={optionsOf('vehicle_status', ['available', 'reserved', 'preparation', 'maintenance', 'returned'])} /></div>}
-        {def.filters.includes('sale_type') && <div style={{ minWidth: 150 }}><Select value={filters.sale_type} onChange={(v) => set('sale_type', v)} placeholder="كل طرق البيع" options={optionsOf('sale_type')} /></div>}
-        {def.filters.includes('salesperson') && <div style={{ minWidth: 150 }}><Select value={filters.salesperson_id} onChange={(v) => set('salesperson_id', v)} placeholder="كل المندوبين" options={(sp.data ?? []).map((u) => [u.id, u.full_name])} /></div>}
-        {def.filters.includes('supplier') && <div style={{ minWidth: 160 }}><Select value={filters.supplier_id} onChange={(v) => set('supplier_id', v)} placeholder="كل الموردين" options={(suppliers.data?.rows ?? []).map((s: any) => [s.id, s.name])} /></div>}
-        {def.filters.includes('category') && <div style={{ minWidth: 150 }}><Select value={filters.category} onChange={(v) => set('category', v)} placeholder="كل البنود" options={optionsOf('cost_category').filter(([k]) => !['purchase', 'trade_in'].includes(k))} /></div>}
-        {def.filters.includes('customer') && <div style={{ minWidth: 300 }}><CustomerPicker value={customer} onChange={setCustomer} /></div>}
+        {def.filters.includes('brand') && (
+          <div style={{ minWidth: 150 }}>
+            <Select value={filters.brand} onChange={(v) => set('brand', v)} placeholder="كل الماركات" options={(brands.data ?? []).map((b) => [b, b])} />
+          </div>
+        )}
+        {def.filters.includes('condition') && (
+          <div style={{ minWidth: 140 }}>
+            <Select value={filters.condition} onChange={(v) => set('condition', v)} placeholder="جديدة ومستعملة" options={optionsOf('condition')} />
+          </div>
+        )}
+        {def.filters.includes('vstatus') && (
+          <div style={{ minWidth: 150 }}>
+            <Select
+              value={filters.vstatus}
+              onChange={(v) => set('vstatus', v)}
+              placeholder="كل الحالات"
+              options={optionsOf('vehicle_status', ['available', 'reserved', 'preparation', 'maintenance', 'returned'])}
+            />
+          </div>
+        )}
+        {def.filters.includes('sale_type') && (
+          <div style={{ minWidth: 150 }}>
+            <Select value={filters.sale_type} onChange={(v) => set('sale_type', v)} placeholder="كل طرق البيع" options={optionsOf('sale_type')} />
+          </div>
+        )}
+        {def.filters.includes('salesperson') && (
+          <div style={{ minWidth: 150 }}>
+            <Select
+              value={filters.salesperson_id}
+              onChange={(v) => set('salesperson_id', v)}
+              placeholder="كل المندوبين"
+              options={(sp.data ?? []).map((u) => [u.id, u.full_name])}
+            />
+          </div>
+        )}
+        {def.filters.includes('supplier') && (
+          <div style={{ minWidth: 160 }}>
+            <Select
+              value={filters.supplier_id}
+              onChange={(v) => set('supplier_id', v)}
+              placeholder="كل الموردين"
+              options={(suppliers.data?.rows ?? []).map((s: any) => [s.id, s.name])}
+            />
+          </div>
+        )}
+        {def.filters.includes('category') && (
+          <div style={{ minWidth: 150 }}>
+            <Select
+              value={filters.category}
+              onChange={(v) => set('category', v)}
+              placeholder="كل البنود"
+              options={optionsOf('cost_category').filter(([k]) => !['purchase', 'trade_in'].includes(k))}
+            />
+          </div>
+        )}
+        {def.filters.includes('customer') && (
+          <div style={{ minWidth: 300 }}>
+            <CustomerPicker value={customer} onChange={setCustomer} />
+          </div>
+        )}
       </div>
       <ErrorAlert error={error} />
       {loading && !data ? (
@@ -151,7 +233,11 @@ function ReportView({ def }: { def: any }) {
         <div className="table-wrap" style={{ opacity: loading ? 0.6 : 1 }}>
           <table className="dt compact">
             <thead>
-              <tr>{data.columns.map((c: any) => <th key={c.key}>{c.label}</th>)}</tr>
+              <tr>
+                {data.columns.map((c: any) => (
+                  <th key={c.key}>{c.label}</th>
+                ))}
+              </tr>
             </thead>
             <tbody>
               {data.rows.map((r: any, i: number) => (
@@ -168,13 +254,17 @@ function ReportView({ def }: { def: any }) {
               <tfoot>
                 <tr>
                   {data.columns.map((c: any, i: number) => (
-                    <td key={c.key} className="num">{i === 0 ? 'الإجمالي' : c.total || c.key === 'margin' ? cellFmt(c.type, data.totals[c.key]) : ''}</td>
+                    <td key={c.key} className="num">
+                      {i === 0 ? 'الإجمالي' : c.total || c.key === 'margin' ? cellFmt(c.type, data.totals[c.key]) : ''}
+                    </td>
                   ))}
                 </tr>
               </tfoot>
             )}
           </table>
-          <div className="pager"><span className="muted small">عدد السجلات: {data.rows.length}</span></div>
+          <div className="pager">
+            <span className="muted small">عدد السجلات: {data.rows.length}</span>
+          </div>
         </div>
       ) : null}
     </div>

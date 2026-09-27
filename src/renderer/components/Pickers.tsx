@@ -52,7 +52,11 @@ export function Picker<T extends { id: number }>({ value, onChange, placeholder,
       <div className="row" style={{ gap: 6 }}>
         <span className="chip" title={r.sub}>
           {r.title}
-          {r.sub && <span className="muted small" style={{ fontWeight: 400 }}>— {r.sub}</span>}
+          {r.sub && (
+            <span className="muted small" style={{ fontWeight: 400 }}>
+              — {r.sub}
+            </span>
+          )}
         </span>
         {!disabled && (
           <button type="button" className="btn sm ghost" onClick={() => onChange(null)}>

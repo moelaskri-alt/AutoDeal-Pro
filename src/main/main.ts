@@ -94,7 +94,20 @@ function runAutoBackup(reason: string) {
 }
 
 // ------------------------------------------------------------------ IPC
-const READ_PREFIXES = ['.list', '.get', '.lookup', '.brands', '.card', '.statement', '.contracts', '.contract', '.preview', '.getImage', '.salespeople', '.run'];
+const READ_PREFIXES = [
+  '.list',
+  '.get',
+  '.lookup',
+  '.brands',
+  '.card',
+  '.statement',
+  '.contracts',
+  '.contract',
+  '.preview',
+  '.getImage',
+  '.salespeople',
+  '.run',
+];
 const isRead = (m: string) => READ_PREFIXES.some((p) => m.endsWith(p)) || m === 'dashboard.get';
 
 function broadcastChange(method: string) {
@@ -140,7 +153,12 @@ const SPECIAL: Record<string, Special> = {
   },
   'backup.list': () => {
     requirePerm(ctx(), 'backup.manage');
-    return { dir: backupDir(), items: listBackups(backupDir()), auto: getSetting(db, 'auto_backup_enabled') === '1', last_auto: getSetting(db, 'last_auto_backup_at') };
+    return {
+      dir: backupDir(),
+      items: listBackups(backupDir()),
+      auto: getSetting(db, 'auto_backup_enabled') === '1',
+      last_auto: getSetting(db, 'last_auto_backup_at'),
+    };
   },
   'backup.create': () => {
     const c = ctx();
@@ -151,7 +169,12 @@ const SPECIAL: Record<string, Special> = {
   },
   'backup.chooseFile': async () => {
     requirePerm(ctx(), 'backup.manage');
-    const r = await dialog.showOpenDialog(mainWin!, { title: 'اختر ملف النسخة الاحتياطية', defaultPath: backupDir(), filters: [{ name: 'AutoDeal Backup', extensions: [BACKUP_EXT.slice(1), 'db'] }], properties: ['openFile'] });
+    const r = await dialog.showOpenDialog(mainWin!, {
+      title: 'اختر ملف النسخة الاحتياطية',
+      defaultPath: backupDir(),
+      filters: [{ name: 'AutoDeal Backup', extensions: [BACKUP_EXT.slice(1), 'db'] }],
+      properties: ['openFile'],
+    });
     if (r.canceled || !r.filePaths[0]) return null;
     return { file: r.filePaths[0], info: validateBackupFile(r.filePaths[0]) };
   },
@@ -268,7 +291,16 @@ function registerIpc() {
 
 // ------------------------------------------------------------------ windows
 function createSplash() {
-  splash = new BrowserWindow({ width: 420, height: 260, frame: false, resizable: false, show: false, center: true, backgroundColor: '#1e3a5f', icon: fs.existsSync(iconPath) ? iconPath : undefined });
+  splash = new BrowserWindow({
+    width: 420,
+    height: 260,
+    frame: false,
+    resizable: false,
+    show: false,
+    center: true,
+    backgroundColor: '#1e3a5f',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
+  });
   const html = `<!doctype html><html dir="rtl"><body style="margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1e3a5f;color:#fff;font-family:'Segoe UI',Tahoma,sans-serif">
     <div style="width:64px;height:64px;border-radius:16px;background:#fff;color:#1e3a5f;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">AD</div>
     <h1 style="margin:14px 0 2px;font-size:24px;letter-spacing:.5px">AutoDeal Pro</h1><div style="opacity:.8">نظام إدارة معارض السيارات</div>

@@ -5,7 +5,21 @@ import { useAuth } from '../lib/auth';
 import { useAction, usePrint, today } from '../lib/actions';
 import { useUi } from '../lib/ui';
 import { DataTable, type Col } from '../components/DataTable';
-import { DateInput, ErrorAlert, Field, Modal, Money, MoneyInput, PageHeader, Select, Spinner, TextArea, TextInput, optionsOf, SummaryLine } from '../components/common';
+import {
+  DateInput,
+  ErrorAlert,
+  Field,
+  Modal,
+  Money,
+  MoneyInput,
+  PageHeader,
+  Select,
+  Spinner,
+  TextArea,
+  TextInput,
+  optionsOf,
+  SummaryLine,
+} from '../components/common';
 import { VehiclePicker, type VehicleLite } from '../components/Pickers';
 import { Icon } from '../components/Icon';
 import { fmtDate, fmtMoney, fmtPct, label } from '../../core/format';
@@ -21,7 +35,8 @@ export function CostFormModal({ initial, vehicle, onClose }: { initial?: any; ve
   const set = (k: string, v: any) => setF((x: any) => ({ ...x, [k]: v }));
   const save = async () => {
     const payload = { ...f, vehicle_id: veh?.id ?? f.vehicle_id };
-    if (await run(() => call(editing ? 'costs.update' : 'costs.create', payload), editing ? 'تم تعديل التكلفة' : 'تم تسجيل التكلفة وتحديث تكلفة السيارة')) onClose();
+    if (await run(() => call(editing ? 'costs.update' : 'costs.create', payload), editing ? 'تم تعديل التكلفة' : 'تم تسجيل التكلفة وتحديث تكلفة السيارة'))
+      onClose();
   };
   return (
     <Modal
@@ -30,8 +45,12 @@ export function CostFormModal({ initial, vehicle, onClose }: { initial?: any; ve
       onClose={onClose}
       footer={
         <>
-          <button className="btn primary" disabled={busy} onClick={save}>حفظ</button>
-          <button className="btn" onClick={onClose}>إلغاء</button>
+          <button className="btn primary" disabled={busy} onClick={save}>
+            حفظ
+          </button>
+          <button className="btn" onClick={onClose}>
+            إلغاء
+          </button>
         </>
       }
     >
@@ -54,7 +73,12 @@ export function CostFormModal({ initial, vehicle, onClose }: { initial?: any; ve
           <Select value={f.payment_method} onChange={(v) => set('payment_method', v)} options={optionsOf('pay_method')} />
         </Field>
         <Field label="المورد / الورشة">
-          <Select value={f.supplier_id ?? ''} onChange={(v) => set('supplier_id', v ? Number(v) : null)} placeholder="—" options={(suppliers.data?.rows ?? []).map((s: any) => [s.id, s.name])} />
+          <Select
+            value={f.supplier_id ?? ''}
+            onChange={(v) => set('supplier_id', v ? Number(v) : null)}
+            placeholder="—"
+            options={(suppliers.data?.rows ?? []).map((s: any) => [s.id, s.name])}
+          />
         </Field>
         <Field label="الوصف">
           <TextInput name="description" value={f.description} onChange={(v) => set('description', v)} />
@@ -74,8 +98,30 @@ export function CostsPage() {
   const cols: Col[] = [
     { key: 'expense_date', label: 'التاريخ', sort: 'expense_date', render: (r) => fmtDate(r.expense_date), exportType: 'date' },
     { key: 'expense_no', label: 'رقم البند' },
-    { key: 'vehicle', label: 'السيارة', sort: 'stock_no', render: (r) => <a onClick={(e) => { e.stopPropagation(); nav(`/vehicles/${r.vehicle_id}`); }} style={{ cursor: 'pointer' }}>{r.stock_no} — {r.brand} {r.model} {r.model_year}</a>, exportValue: (r) => `${r.stock_no} ${r.brand} ${r.model} ${r.model_year}` },
-    { key: 'category', label: 'نوع التكلفة', sort: 'category', render: (r) => label('cost_category', r.category), exportValue: (r) => label('cost_category', r.category) },
+    {
+      key: 'vehicle',
+      label: 'السيارة',
+      sort: 'stock_no',
+      render: (r) => (
+        <a
+          onClick={(e) => {
+            e.stopPropagation();
+            nav(`/vehicles/${r.vehicle_id}`);
+          }}
+          style={{ cursor: 'pointer' }}
+        >
+          {r.stock_no} — {r.brand} {r.model} {r.model_year}
+        </a>
+      ),
+      exportValue: (r) => `${r.stock_no} ${r.brand} ${r.model} ${r.model_year}`,
+    },
+    {
+      key: 'category',
+      label: 'نوع التكلفة',
+      sort: 'category',
+      render: (r) => label('cost_category', r.category),
+      exportValue: (r) => label('cost_category', r.category),
+    },
     { key: 'description', label: 'الوصف', wrap: true },
     { key: 'supplier_name', label: 'المورد' },
     { key: 'payment_method', label: 'الدفع', render: (r) => label('pay_method', r.payment_method), exportValue: (r) => label('pay_method', r.payment_method) },
@@ -86,7 +132,13 @@ export function CostsPage() {
       <PageHeader
         title="تكاليف السيارات"
         sub="كل التكاليف المباشرة المرتبطة بالسيارات (تدخل في التكلفة الفعلية لكل سيارة) — منفصلة عن المصروفات العامة"
-        actions={can('costs.manage') && <button className="btn primary" onClick={() => setForm({})}><Icon name="plus" /> تسجيل تكلفة</button>}
+        actions={
+          can('costs.manage') && (
+            <button className="btn primary" onClick={() => setForm({})}>
+              <Icon name="plus" /> تسجيل تكلفة
+            </button>
+          )
+        }
       />
       <DataTable
         method="costs.list"
@@ -126,26 +178,58 @@ export function CostCardView({ vehicleId }: { vehicleId: number }) {
         <div className="card-h">
           <h3>بنود التكلفة</h3>
           <div className="spacer" />
-          <button className="btn sm" onClick={() => print('costcard', vehicleId)}><Icon name="printer" /> طباعة</button>
-          <button className="btn sm" onClick={() => print('costcard', vehicleId, 'pdf')}><Icon name="download" /> PDF</button>
-          {data.canManage && <button className="btn sm primary" onClick={() => setForm({})}><Icon name="plus" /> إضافة تكلفة</button>}
+          <button className="btn sm" onClick={() => print('costcard', vehicleId)}>
+            <Icon name="printer" /> طباعة
+          </button>
+          <button className="btn sm" onClick={() => print('costcard', vehicleId, 'pdf')}>
+            <Icon name="download" /> PDF
+          </button>
+          {data.canManage && (
+            <button className="btn sm primary" onClick={() => setForm({})}>
+              <Icon name="plus" /> إضافة تكلفة
+            </button>
+          )}
         </div>
         <div className="table-wrap">
           <table className="dt">
-            <thead><tr><th>التاريخ</th><th>البند</th><th>الوصف</th><th>المورد</th><th>المبلغ</th><th></th></tr></thead>
+            <thead>
+              <tr>
+                <th>التاريخ</th>
+                <th>البند</th>
+                <th>الوصف</th>
+                <th>المورد</th>
+                <th>المبلغ</th>
+                <th></th>
+              </tr>
+            </thead>
             <tbody>
               {data.lines.map((l: any) => (
                 <tr key={l.id}>
                   <td className="nowrap">{fmtDate(l.expense_date)}</td>
-                  <td className="nowrap"><b>{label('cost_category', l.category)}</b></td>
+                  <td className="nowrap">
+                    <b>{label('cost_category', l.category)}</b>
+                  </td>
                   <td className="wrap">{l.description}</td>
                   <td>{l.supplier_name ?? '—'}</td>
                   <td className="num bold">{fmtMoney(l.amount)}</td>
                   <td className="actions">
                     {data.canManage && l.source_type === 'manual' && !['purchase', 'trade_in'].includes(l.category) && (
                       <>
-                        <button className="btn sm ghost" onClick={() => setForm(l)} title="تعديل"><Icon name="edit" /></button>
-                        <button className="btn sm ghost" title="حذف" onClick={async () => (await confirm({ title: 'حذف بند التكلفة', message: `حذف ${label('cost_category', l.category)} بمبلغ ${fmtMoney(l.amount)}؟ ستنخفض التكلفة الفعلية للسيارة.`, danger: true, confirmText: 'حذف' })) && run(() => call('costs.delete', { id: l.id }), 'تم حذف البند')}>
+                        <button className="btn sm ghost" onClick={() => setForm(l)} title="تعديل">
+                          <Icon name="edit" />
+                        </button>
+                        <button
+                          className="btn sm ghost"
+                          title="حذف"
+                          onClick={async () =>
+                            (await confirm({
+                              title: 'حذف بند التكلفة',
+                              message: `حذف ${label('cost_category', l.category)} بمبلغ ${fmtMoney(l.amount)}؟ ستنخفض التكلفة الفعلية للسيارة.`,
+                              danger: true,
+                              confirmText: 'حذف',
+                            })) && run(() => call('costs.delete', { id: l.id }), 'تم حذف البند')
+                          }
+                        >
                           <Icon name="trash" />
                         </button>
                       </>
@@ -154,7 +238,13 @@ export function CostCardView({ vehicleId }: { vehicleId: number }) {
                 </tr>
               ))}
             </tbody>
-            <tfoot><tr><td colSpan={4}>التكلفة الفعلية</td><td className="num">{fmtMoney(t.actual_cost)}</td><td /></tr></tfoot>
+            <tfoot>
+              <tr>
+                <td colSpan={4}>التكلفة الفعلية</td>
+                <td className="num">{fmtMoney(t.actual_cost)}</td>
+                <td />
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
@@ -181,7 +271,11 @@ export function CostCardView({ vehicleId }: { vehicleId: number }) {
               <>
                 <SummaryLine label="السعر المطلوب" value={fmtMoney(t.asking_price)} />
                 <SummaryLine label="الحد الأدنى" value={fmtMoney(t.min_price)} />
-                <SummaryLine label="الربح المتوقع" value={t.expected_profit !== null ? <span className={t.expected_profit >= 0 ? 'pos' : 'neg'}>{fmtMoney(t.expected_profit)}</span> : '—'} total />
+                <SummaryLine
+                  label="الربح المتوقع"
+                  value={t.expected_profit !== null ? <span className={t.expected_profit >= 0 ? 'pos' : 'neg'}>{fmtMoney(t.expected_profit)}</span> : '—'}
+                  total
+                />
                 <SummaryLine label="الهامش المتوقع" value={fmtPct(t.expected_margin)} />
               </>
             )}

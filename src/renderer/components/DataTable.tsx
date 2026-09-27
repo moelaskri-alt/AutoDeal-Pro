@@ -3,6 +3,7 @@ import { call, useApi } from '../lib/api';
 import { useUi } from '../lib/ui';
 import { Icon } from './Icon';
 import { EmptyState, Spinner, ErrorAlert } from './common';
+import { CustomerPicker, type CustomerLite } from './Pickers';
 
 export interface Col<T = any> {
   key: string;
@@ -26,6 +27,7 @@ export type FilterDef =
   | { key: string; label: string; type: 'brand' }
   | { key: string; label: string; type: 'salesperson' }
   | { key: string; label: string; type: 'checkbox' }
+  | { key: string; label: string; type: 'customer' }
   | { key: 'dates'; label: string; type: 'dates' };
 
 interface Props<T> {
@@ -54,6 +56,7 @@ export function DataTable<T = any>(p: Props<T>) {
   const [pageSize, setPageSize] = useState(p.pageSize ?? 25);
   const [sort, setSort] = useState<{ sort?: string; dir?: 'asc' | 'desc' }>(p.defaultSort ?? {});
   const [exporting, setExporting] = useState(false);
+  const [customer, setCustomer] = useState<CustomerLite | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 250);
@@ -90,7 +93,7 @@ export function DataTable<T = any>(p: Props<T>) {
       const res = await call('export.table', {
         title: p.exportTitle ?? 'تصدير',
         format,
-        columns: ex.map((c) => ({ key: c.key, label: c.label, type: c.exportValue ? 'text' : c.exportType ?? 'text' })),
+        columns: ex.map((c) => ({ key: c.key, label: c.label, type: c.exportValue ? 'text' : (c.exportType ?? 'text') })),
         rows,
       });
       if (res?.file) toast(`تم التصدير: ${res.file}`);
@@ -106,7 +109,14 @@ export function DataTable<T = any>(p: Props<T>) {
       <div className="toolbar">
         {!p.noSearch && (
           <div style={{ position: 'relative', flex: 1, maxWidth: 360, minWidth: 220 }}>
-            <input className="input search" style={{ width: '100%', paddingInlineStart: 34 }} placeholder={p.searchPlaceholder ?? 'بحث...'} value={search} onChange={(e) => setSearch(e.target.value)} aria-label="بحث" />
+            <input
+              className="input search"
+              style={{ width: '100%', paddingInlineStart: 34 }}
+              placeholder={p.searchPlaceholder ?? 'بحث...'}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="بحث"
+            />
             <span style={{ position: 'absolute', insetInlineStart: 10, top: 10, color: '#9ca3af' }}>
               <Icon name="search" size={16} />
             </span>
@@ -117,9 +127,35 @@ export function DataTable<T = any>(p: Props<T>) {
             return (
               <div key="dates" className="row" style={{ gap: 6 }}>
                 <span className="muted small">{f.label}</span>
-                <input className="input ltr" type="date" aria-label="من تاريخ" value={filters.from ?? ''} onChange={(e) => setF('from', e.target.value)} style={{ minWidth: 140 }} />
+                <input
+                  className="input ltr"
+                  type="date"
+                  aria-label="من تاريخ"
+                  value={filters.from ?? ''}
+                  onChange={(e) => setF('from', e.target.value)}
+                  style={{ minWidth: 140 }}
+                />
                 <span className="muted small">إلى</span>
-                <input className="input ltr" type="date" aria-label="إلى تاريخ" value={filters.to ?? ''} onChange={(e) => setF('to', e.target.value)} style={{ minWidth: 140 }} />
+                <input
+                  className="input ltr"
+                  type="date"
+                  aria-label="إلى تاريخ"
+                  value={filters.to ?? ''}
+                  onChange={(e) => setF('to', e.target.value)}
+                  style={{ minWidth: 140 }}
+                />
+              </div>
+            );
+          if (f.type === 'customer')
+            return (
+              <div key={f.key} style={{ minWidth: 240, maxWidth: 320 }} title={f.label}>
+                <CustomerPicker
+                  value={customer}
+                  onChange={(c) => {
+                    setCustomer(c);
+                    setF(f.key, c?.id ?? '');
+                  }}
+                />
               </div>
             );
           if (f.type === 'checkbox')
@@ -129,7 +165,11 @@ export function DataTable<T = any>(p: Props<T>) {
               </label>
             );
           const options: [string | number, string][] =
-            f.type === 'brand' ? (brands.data ?? []).map((b) => [b, b]) : f.type === 'salesperson' ? (salespeople.data ?? []).map((u) => [u.id, u.full_name]) : (f as any).options;
+            f.type === 'brand'
+              ? (brands.data ?? []).map((b) => [b, b])
+              : f.type === 'salesperson'
+                ? (salespeople.data ?? []).map((u) => [u.id, u.full_name])
+                : (f as any).options;
           return (
             <select key={f.key} className="input" aria-label={f.label} value={filters[f.key] ?? ''} onChange={(e) => setF(f.key, e.target.value)}>
               <option value="">{f.label}: الكل</option>
@@ -146,6 +186,7 @@ export function DataTable<T = any>(p: Props<T>) {
             className="btn ghost sm"
             onClick={() => {
               setSearch('');
+              setCustomer(null);
               setFilters(p.initialFilters ?? {});
             }}
           >
@@ -193,7 +234,7 @@ export function DataTable<T = any>(p: Props<T>) {
                   <tr key={r.id ?? i} className={`${p.onRowClick ? 'clickable' : ''} ${p.rowClass?.(r) ?? ''}`} onClick={() => p.onRowClick?.(r)}>
                     {cols.map((c) => (
                       <td key={c.key} className={`${c.num ? 'num' : ''} ${c.wrap ? 'wrap' : 'nowrap'}`}>
-                        {c.render ? c.render(r) : r[c.key] ?? '—'}
+                        {c.render ? c.render(r) : (r[c.key] ?? '—')}
                       </td>
                     ))}
                   </tr>

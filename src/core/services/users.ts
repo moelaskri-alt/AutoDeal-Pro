@@ -31,12 +31,7 @@ export function ensureSecurity(db: Db): void {
     for (const p of PERMISSIONS) db.run('INSERT OR IGNORE INTO role_permissions(role_id, permission_code) VALUES (?,?)', [adminId, p.code]);
     const users = db.scalar<number>('SELECT COUNT(*) FROM users');
     if (!users) {
-      db.run('INSERT INTO users(username, full_name, password_hash, role_id) VALUES (?,?,?,?)', [
-        'admin',
-        'مدير النظام',
-        hashPassword('admin123'),
-        adminId,
-      ]);
+      db.run('INSERT INTO users(username, full_name, password_hash, role_id) VALUES (?,?,?,?)', ['admin', 'مدير النظام', hashPassword('admin123'), adminId]);
     }
   });
 }
@@ -48,7 +43,9 @@ function sessionUser(db: Db, userId: number): { user: SessionUser; perms: string
     [userId],
   );
   if (!u || !u.is_active) fail('AUTH', 'المستخدم غير موجود أو غير مفعل.');
-  const perms = db.all<{ permission_code: string }>('SELECT permission_code FROM role_permissions WHERE role_id = ?', [u.role_id]).map((r) => r.permission_code);
+  const perms = db
+    .all<{ permission_code: string }>('SELECT permission_code FROM role_permissions WHERE role_id = ?', [u.role_id])
+    .map((r) => r.permission_code);
   return { user: { id: u.id, username: u.username, full_name: u.full_name, role: u.role, role_name: u.role_name }, perms };
 }
 
@@ -115,10 +112,9 @@ export function createUser(db: Db, ctx: Ctx, input: any) {
 }
 
 function assertNotLastAdmin(db: Db, userId: number) {
-  const admins = db.scalar<number>(
-    `SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE r.code = 'admin' AND u.is_active = 1 AND u.id <> ?`,
-    [userId],
-  );
+  const admins = db.scalar<number>(`SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE r.code = 'admin' AND u.is_active = 1 AND u.id <> ?`, [
+    userId,
+  ]);
   if (!admins) fail('LAST_ADMIN', 'لا يمكن تنفيذ العملية لأن هذا هو آخر مدير نظام مفعل.');
 }
 
@@ -176,7 +172,11 @@ export function changeOwnPassword(db: Db, ctx: Ctx, input: { current: string; pa
   const pwErr = validatePasswordStrength(input.password);
   if (pwErr) fail('VALIDATION', pwErr);
   db.tx(() => {
-    db.run('UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?', [hashPassword(input.password), localDateTime(), ctx.user.id]);
+    db.run('UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?', [
+      hashPassword(input.password),
+      localDateTime(),
+      ctx.user.id,
+    ]);
     audit(db, ctx, { action: 'change_password', module: 'users', record_type: 'user', record_id: ctx.user.id, label: ctx.user.username });
   });
   return { ok: true };

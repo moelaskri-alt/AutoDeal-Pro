@@ -6,7 +6,7 @@ import { useUi } from './ui';
 export function useAction() {
   const { toast } = useUi();
   const [busy, setBusy] = useState(false);
-  const run = async <T,>(fn: () => Promise<T>, success?: string): Promise<T | undefined> => {
+  const run = async <T>(fn: () => Promise<T>, success?: string): Promise<T | undefined> => {
     setBusy(true);
     try {
       const r = await fn();

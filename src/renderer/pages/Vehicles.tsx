@@ -5,7 +5,26 @@ import { useAuth } from '../lib/auth';
 import { useAction, usePrint, today } from '../lib/actions';
 import { useUi } from '../lib/ui';
 import { DataTable, type Col } from '../components/DataTable';
-import { Badge, DateInput, DL, ErrorAlert, Field, Modal, Money, MoneyInput, NumberInput, PageHeader, Select, Spinner, Tabs, TextArea, TextInput, optionsOf, Kpi, EmptyState } from '../components/common';
+import {
+  Badge,
+  DateInput,
+  DL,
+  ErrorAlert,
+  Field,
+  Modal,
+  Money,
+  MoneyInput,
+  NumberInput,
+  PageHeader,
+  Select,
+  Spinner,
+  Tabs,
+  TextArea,
+  TextInput,
+  optionsOf,
+  Kpi,
+  EmptyState,
+} from '../components/common';
 import { Icon } from '../components/Icon';
 import { fmtDate, fmtMoney, fmtNum, fmtPct, label, fmtDateTime } from '../../core/format';
 import { CostCardView } from './Costs';
@@ -13,7 +32,7 @@ import { AuditTrail } from './Users';
 
 const imgCache = new Map<number, string>();
 export function VehicleImage({ id, className = 'thumb', alt = '' }: { id: number | null | undefined; className?: string; alt?: string }) {
-  const [src, setSrc] = useState<string | null>(id ? imgCache.get(id) ?? null : null);
+  const [src, setSrc] = useState<string | null>(id ? (imgCache.get(id) ?? null) : null);
   useEffect(() => {
     let alive = true;
     if (!id) return setSrc(null);
@@ -29,7 +48,12 @@ export function VehicleImage({ id, className = 'thumb', alt = '' }: { id: number
       alive = false;
     };
   }, [id]);
-  if (!src) return <div className={className} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}><Icon name="car" size={18} /></div>;
+  if (!src)
+    return (
+      <div className={className} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>
+        <Icon name="car" size={18} />
+      </div>
+    );
   return <img className={className} src={src} alt={alt} />;
 }
 
@@ -51,9 +75,7 @@ export function VehiclesPage() {
       render: (r) => (
         <>
           <b>{vehicleTitle(r)}</b>
-          <span className="cell-sub">
-            {[r.color, r.vin].filter(Boolean).join(' • ') || '—'}
-          </span>
+          <span className="cell-sub">{[r.color, r.vin].filter(Boolean).join(' • ') || '—'}</span>
         </>
       ),
       exportValue: (r) => vehicleTitle(r),
@@ -63,16 +85,40 @@ export function VehiclesPage() {
     { key: 'color', label: 'اللون', exportOnly: true },
     { key: 'vin', label: 'رقم الشاسيه', exportOnly: true },
     { key: 'mileage', label: 'كم', num: true, sort: 'mileage', render: (r) => fmtNum(r.mileage), exportType: 'int' },
-    { key: 'status', label: 'الحالة', sort: 'status', render: (r) => <Badge group="vehicle_status" value={r.status} />, exportValue: (r) => label('vehicle_status', r.status) },
+    {
+      key: 'status',
+      label: 'الحالة',
+      sort: 'status',
+      render: (r) => <Badge group="vehicle_status" value={r.status} />,
+      exportValue: (r) => label('vehicle_status', r.status),
+    },
     { key: 'days_in_stock', label: 'أيام بالمخزون', num: true, sort: 'days_in_stock', exportType: 'int' },
-    { key: 'actual_cost', label: 'التكلفة الفعلية', num: true, sort: 'actual_cost', hidden: !fin, render: (r) => fmtMoney(r.actual_cost), exportType: 'money', total: (t) => fmtMoney(t.actual_cost) },
-    { key: 'asking_price', label: 'السعر المطلوب', num: true, sort: 'asking_price', render: (r) => fmtMoney(r.asking_price), exportType: 'money', total: (t) => fmtMoney(t.asking_price) },
+    {
+      key: 'actual_cost',
+      label: 'التكلفة الفعلية',
+      num: true,
+      sort: 'actual_cost',
+      hidden: !fin,
+      render: (r) => fmtMoney(r.actual_cost),
+      exportType: 'money',
+      total: (t) => fmtMoney(t.actual_cost),
+    },
+    {
+      key: 'asking_price',
+      label: 'السعر المطلوب',
+      num: true,
+      sort: 'asking_price',
+      render: (r) => fmtMoney(r.asking_price),
+      exportType: 'money',
+      total: (t) => fmtMoney(t.asking_price),
+    },
     {
       key: 'expected_profit',
       label: 'الربح المتوقع',
       num: true,
       hidden: !fin,
-      render: (r) => (r.asking_price ? <span className={r.asking_price - r.actual_cost >= 0 ? 'pos' : 'neg'}>{fmtMoney(r.asking_price - r.actual_cost)}</span> : '—'),
+      render: (r) =>
+        r.asking_price ? <span className={r.asking_price - r.actual_cost >= 0 ? 'pos' : 'neg'}>{fmtMoney(r.asking_price - r.actual_cost)}</span> : '—',
       exportValue: (r) => (r.asking_price ? (r.asking_price - r.actual_cost) / 100 : ''),
     },
   ];
@@ -168,20 +214,60 @@ export function VehicleFields({ v, set, showStatus }: { v: any; set: (k: string,
         <NumberInput name="mileage" value={v.mileage} onChange={(x) => set('mileage', x)} min={0} />
       </Field>
       <Field label="ناقل الحركة">
-        <Select name="transmission" value={v.transmission} onChange={(x) => set('transmission', x)} options={[['أوتوماتيك', 'أوتوماتيك'], ['مانيوال', 'مانيوال']]} placeholder="—" />
+        <Select
+          name="transmission"
+          value={v.transmission}
+          onChange={(x) => set('transmission', x)}
+          options={[
+            ['أوتوماتيك', 'أوتوماتيك'],
+            ['مانيوال', 'مانيوال'],
+          ]}
+          placeholder="—"
+        />
       </Field>
       <Field label="نوع الوقود">
-        <Select name="fuel_type" value={v.fuel_type} onChange={(x) => set('fuel_type', x)} options={[['بنزين', 'بنزين'], ['ديزل', 'ديزل'], ['هايبرد', 'هايبرد'], ['كهرباء', 'كهرباء'], ['غاز طبيعي', 'غاز طبيعي']]} placeholder="—" />
+        <Select
+          name="fuel_type"
+          value={v.fuel_type}
+          onChange={(x) => set('fuel_type', x)}
+          options={[
+            ['بنزين', 'بنزين'],
+            ['ديزل', 'ديزل'],
+            ['هايبرد', 'هايبرد'],
+            ['كهرباء', 'كهرباء'],
+            ['غاز طبيعي', 'غاز طبيعي'],
+          ]}
+          placeholder="—"
+        />
       </Field>
       <Field label="نوع الهيكل">
-        <Select name="body_type" value={v.body_type} onChange={(x) => set('body_type', x)} options={[['سيدان', 'سيدان'], ['هاتشباك', 'هاتشباك'], ['SUV', 'SUV'], ['كروس أوفر', 'كروس أوفر'], ['بيك أب', 'بيك أب'], ['فان', 'فان'], ['كوبيه', 'كوبيه']]} placeholder="—" />
+        <Select
+          name="body_type"
+          value={v.body_type}
+          onChange={(x) => set('body_type', x)}
+          options={[
+            ['سيدان', 'سيدان'],
+            ['هاتشباك', 'هاتشباك'],
+            ['SUV', 'SUV'],
+            ['كروس أوفر', 'كروس أوفر'],
+            ['بيك أب', 'بيك أب'],
+            ['فان', 'فان'],
+            ['كوبيه', 'كوبيه'],
+          ]}
+          placeholder="—"
+        />
       </Field>
       <Field label="بلد المنشأ">
         <TextInput name="origin_country" value={v.origin_country} onChange={(x) => set('origin_country', x)} />
       </Field>
       {showStatus && (
         <Field label="الحالة">
-          <Select name="status" value={v.status} onChange={(x) => set('status', x)} options={optionsOf('vehicle_status', ['available', 'preparation', 'maintenance', 'returned'])} />
+          <Select
+            name="status"
+            value={v.status}
+            onChange={(x) => set('status', x)}
+            options={optionsOf('vehicle_status', ['available', 'preparation', 'maintenance', 'returned'])}
+          />
         </Field>
       )}
     </>
@@ -192,7 +278,9 @@ export function VehicleFormModal({ initial, onClose, onSaved }: { initial: any; 
   const { can } = useAuth();
   const { run, busy } = useAction();
   const editing = !!initial.id;
-  const [v, setV] = useState<any>(editing ? initial : { condition: 'new', status: 'available', acquisition_date: today(), mileage: 0, model_year: new Date().getFullYear() });
+  const [v, setV] = useState<any>(
+    editing ? initial : { condition: 'new', status: 'available', acquisition_date: today(), mileage: 0, model_year: new Date().getFullYear() },
+  );
   const set = (k: string, val: any) => setV((x: any) => ({ ...x, [k]: val }));
   const lockedStatus = ['reserved', 'sold', 'delivered'].includes(initial.status);
   const save = async () => {
@@ -218,7 +306,11 @@ export function VehicleFormModal({ initial, onClose, onSaved }: { initial: any; 
         </>
       }
     >
-      {!editing && <div className="alert info" style={{ marginBottom: 12 }}>لتسجيل سيارة مشتراة من مورد أو فرد مع فاتورة الشراء، استخدم شاشة «المشتريات» — سيتم إنشاء السيارة وبطاقة التكلفة تلقائياً.</div>}
+      {!editing && (
+        <div className="alert info" style={{ marginBottom: 12 }}>
+          لتسجيل سيارة مشتراة من مورد أو فرد مع فاتورة الشراء، استخدم شاشة «المشتريات» — سيتم إنشاء السيارة وبطاقة التكلفة تلقائياً.
+        </div>
+      )}
       <div className="form-grid cols-3">
         <VehicleFields v={v} set={set} showStatus={!lockedStatus} />
         <Field label="تاريخ الاستلام" required>
@@ -269,14 +361,23 @@ export function VehicleDetailPage() {
   const sellable = ['available', 'returned', 'preparation', 'reserved'].includes(v.status);
 
   const del = async () => {
-    const ok = await confirm({ title: 'حذف السيارة', message: `سيتم حذف السيارة ${v.stock_no} (${vehicleTitle(v)}). لا يمكن حذف سيارة مرتبطة بعمليات بيع أو شراء أو حجز.`, danger: true, confirmText: 'حذف' });
+    const ok = await confirm({
+      title: 'حذف السيارة',
+      message: `سيتم حذف السيارة ${v.stock_no} (${vehicleTitle(v)}). لا يمكن حذف سيارة مرتبطة بعمليات بيع أو شراء أو حجز.`,
+      danger: true,
+      confirmText: 'حذف',
+    });
     if (ok && (await run(() => call('vehicles.delete', { id: v.id }), 'تم حذف السيارة'))) nav('/vehicles');
   };
 
   return (
     <div className="stack">
       <PageHeader
-        crumb={<a onClick={() => nav('/vehicles')} style={{ cursor: 'pointer' }}>السيارات</a>}
+        crumb={
+          <a onClick={() => nav('/vehicles')} style={{ cursor: 'pointer' }}>
+            السيارات
+          </a>
+        }
         title={
           <span className="row" style={{ gap: 10 }}>
             {vehicleTitle(v)} <Badge group="vehicle_status" value={v.status} /> <Badge group="condition" value={v.condition} />
@@ -319,12 +420,46 @@ export function VehicleDetailPage() {
         }
       />
       <div className="grid-4">
-        {pr ? <Kpi label="التكلفة الفعلية" value={<Money v={pr.actual_cost} />} sub={<>شراء <Money v={v.acquisition_cost} /> + مباشرة <Money v={v.direct_costs} /></>} /> : <Kpi label="الحالة" value={label('vehicle_status', v.status)} />}
-        <Kpi label="السعر المطلوب" value={<Money v={v.asking_price} />} sub={<>الحد الأدنى: <Money v={v.min_price} /></>} />
+        {pr ? (
+          <Kpi
+            label="التكلفة الفعلية"
+            value={<Money v={pr.actual_cost} />}
+            sub={
+              <>
+                شراء <Money v={v.acquisition_cost} /> + مباشرة <Money v={v.direct_costs} />
+              </>
+            }
+          />
+        ) : (
+          <Kpi label="الحالة" value={label('vehicle_status', v.status)} />
+        )}
+        <Kpi
+          label="السعر المطلوب"
+          value={<Money v={v.asking_price} />}
+          sub={
+            <>
+              الحد الأدنى: <Money v={v.min_price} />
+            </>
+          }
+        />
         {pr && v.sale_id ? (
-          <Kpi label="سعر البيع / الربح الفعلي" value={<Money v={v.selling_price} />} sub={<span className={pr.actual_profit >= 0 ? 'pos' : 'neg'}>ربح {fmtMoney(pr.actual_profit)} ({fmtPct(pr.actual_margin)})</span>} tone="accent" />
+          <Kpi
+            label="سعر البيع / الربح الفعلي"
+            value={<Money v={v.selling_price} />}
+            sub={
+              <span className={pr.actual_profit >= 0 ? 'pos' : 'neg'}>
+                ربح {fmtMoney(pr.actual_profit)} ({fmtPct(pr.actual_margin)})
+              </span>
+            }
+            tone="accent"
+          />
         ) : pr ? (
-          <Kpi label="الربح المتوقع" value={pr.expected_profit !== null ? <Money v={pr.expected_profit} /> : '—'} sub={pr.expected_margin !== null ? `هامش ${fmtPct(pr.expected_margin)} • عند الحد الأدنى: ${fmtMoney(pr.min_profit)}` : 'حدد سعر البيع'} tone={pr.expected_profit < 0 ? 'danger' : 'accent'} />
+          <Kpi
+            label="الربح المتوقع"
+            value={pr.expected_profit !== null ? <Money v={pr.expected_profit} /> : '—'}
+            sub={pr.expected_margin !== null ? `هامش ${fmtPct(pr.expected_margin)} • عند الحد الأدنى: ${fmtMoney(pr.min_profit)}` : 'حدد سعر البيع'}
+            tone={pr.expected_profit < 0 ? 'danger' : 'accent'}
+          />
         ) : (
           <Kpi label="الكيلومترات" value={fmtNum(v.mileage)} />
         )}
@@ -403,7 +538,13 @@ function PricingModal({ v, actualCost, onClose }: { v: any; actualCost?: number;
       onClose={onClose}
       footer={
         <>
-          <button className="btn primary" disabled={busy} onClick={async () => (await run(() => call('vehicles.setPrices', { id: v.id, asking_price: asking ?? 0, min_price: min ?? 0 }), 'تم تحديث الأسعار')) && onClose()}>
+          <button
+            className="btn primary"
+            disabled={busy}
+            onClick={async () =>
+              (await run(() => call('vehicles.setPrices', { id: v.id, asking_price: asking ?? 0, min_price: min ?? 0 }), 'تم تحديث الأسعار')) && onClose()
+            }
+          >
             حفظ
           </button>
           <button className="btn" onClick={onClose}>
@@ -421,7 +562,9 @@ function PricingModal({ v, actualCost, onClose }: { v: any; actualCost?: number;
             </div>
             <div className="summary-line">
               <span>الربح المتوقع</span>
-              <b className={`num ${profit !== null && profit < 0 ? 'neg' : 'pos'}`}>{profit !== null ? `${fmtMoney(profit)} (${fmtPct(asking ? (profit / asking) * 100 : 0)})` : '—'}</b>
+              <b className={`num ${profit !== null && profit < 0 ? 'neg' : 'pos'}`}>
+                {profit !== null ? `${fmtMoney(profit)} (${fmtPct(asking ? (profit / asking) * 100 : 0)})` : '—'}
+              </b>
             </div>
             <div className="summary-line">
               <span>الربح عند الحد الأدنى</span>
@@ -493,10 +636,19 @@ function VehicleImages({ vehicleId, images, canEdit }: { vehicleId: number; imag
               <VehicleImage id={im.id} className="" />
               {canEdit && (
                 <div className="ops">
-                  {im.is_primary ? <span className="badge green">الرئيسية</span> : <button className="btn sm" onClick={() => run(() => call('vehicles.setPrimaryImage', { id: im.id }))}>تعيين رئيسية</button>}
+                  {im.is_primary ? (
+                    <span className="badge green">الرئيسية</span>
+                  ) : (
+                    <button className="btn sm" onClick={() => run(() => call('vehicles.setPrimaryImage', { id: im.id }))}>
+                      تعيين رئيسية
+                    </button>
+                  )}
                   <button
                     className="btn sm danger"
-                    onClick={async () => (await confirm({ title: 'حذف الصورة', message: 'هل تريد حذف هذه الصورة؟', danger: true, confirmText: 'حذف' })) && run(() => call('vehicles.deleteImage', { id: im.id }), 'تم حذف الصورة')}
+                    onClick={async () =>
+                      (await confirm({ title: 'حذف الصورة', message: 'هل تريد حذف هذه الصورة؟', danger: true, confirmText: 'حذف' })) &&
+                      run(() => call('vehicles.deleteImage', { id: im.id }), 'تم حذف الصورة')
+                    }
                   >
                     حذف
                   </button>
@@ -515,43 +667,110 @@ function VehicleHistory({ data }: { data: any }) {
   return (
     <div className="stack">
       <div className="card">
-        <div className="card-h"><h3>المبيعات</h3></div>
+        <div className="card-h">
+          <h3>المبيعات</h3>
+        </div>
         {data.sales.length ? (
           <table className="dt">
-            <thead><tr><th>رقم البيع</th><th>التاريخ</th><th>العميل</th><th>طريقة البيع</th><th>المندوب</th><th>السعر</th><th>الحالة</th></tr></thead>
+            <thead>
+              <tr>
+                <th>رقم البيع</th>
+                <th>التاريخ</th>
+                <th>العميل</th>
+                <th>طريقة البيع</th>
+                <th>المندوب</th>
+                <th>السعر</th>
+                <th>الحالة</th>
+              </tr>
+            </thead>
             <tbody>
               {data.sales.map((s: any) => (
                 <tr key={s.id} className="clickable" onClick={() => nav(`/sales/${s.id}`)}>
-                  <td>{s.sale_no}</td><td>{fmtDate(s.sale_date)}</td><td>{s.customer_name}</td><td>{label('sale_type', s.sale_type)}</td><td>{s.salesperson}</td>
-                  <td className="num">{fmtMoney(s.selling_price)}</td><td><Badge group="sale_status" value={s.status} /></td>
+                  <td>{s.sale_no}</td>
+                  <td>{fmtDate(s.sale_date)}</td>
+                  <td>{s.customer_name}</td>
+                  <td>{label('sale_type', s.sale_type)}</td>
+                  <td>{s.salesperson}</td>
+                  <td className="num">{fmtMoney(s.selling_price)}</td>
+                  <td>
+                    <Badge group="sale_status" value={s.status} />
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        ) : <div className="card-b muted">لا توجد مبيعات</div>}
+        ) : (
+          <div className="card-b muted">لا توجد مبيعات</div>
+        )}
       </div>
       <div className="grid-2">
         <div className="card">
-          <div className="card-h"><h3>الحجوزات</h3></div>
+          <div className="card-h">
+            <h3>الحجوزات</h3>
+          </div>
           {data.reservations.length ? (
             <table className="dt">
-              <thead><tr><th>الرقم</th><th>العميل</th><th>من</th><th>إلى</th><th>العربون</th><th>الحالة</th></tr></thead>
-              <tbody>{data.reservations.map((r: any) => (
-                <tr key={r.id}><td>{r.reservation_no}</td><td>{r.customer_name}</td><td>{fmtDate(r.reservation_date)}</td><td>{fmtDate(r.expiry_date)}</td><td className="num">{fmtMoney(r.amount)}</td><td><Badge group="reservation_status" value={r.status} /></td></tr>
-              ))}</tbody>
+              <thead>
+                <tr>
+                  <th>الرقم</th>
+                  <th>العميل</th>
+                  <th>من</th>
+                  <th>إلى</th>
+                  <th>العربون</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.reservations.map((r: any) => (
+                  <tr key={r.id}>
+                    <td>{r.reservation_no}</td>
+                    <td>{r.customer_name}</td>
+                    <td>{fmtDate(r.reservation_date)}</td>
+                    <td>{fmtDate(r.expiry_date)}</td>
+                    <td className="num">{fmtMoney(r.amount)}</td>
+                    <td>
+                      <Badge group="reservation_status" value={r.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
-          ) : <div className="card-b muted">لا توجد حجوزات</div>}
+          ) : (
+            <div className="card-b muted">لا توجد حجوزات</div>
+          )}
         </div>
         <div className="card">
-          <div className="card-h"><h3>عروض الأسعار</h3></div>
+          <div className="card-h">
+            <h3>عروض الأسعار</h3>
+          </div>
           {data.quotations.length ? (
             <table className="dt">
-              <thead><tr><th>الرقم</th><th>العميل</th><th>التاريخ</th><th>السعر</th><th>الحالة</th></tr></thead>
-              <tbody>{data.quotations.map((q: any) => (
-                <tr key={q.id}><td>{q.quote_no}</td><td>{q.customer_name}</td><td>{fmtDate(q.quote_date)}</td><td className="num">{fmtMoney(q.final_price)}</td><td><Badge group="quotation_status" value={q.status} /></td></tr>
-              ))}</tbody>
+              <thead>
+                <tr>
+                  <th>الرقم</th>
+                  <th>العميل</th>
+                  <th>التاريخ</th>
+                  <th>السعر</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.quotations.map((q: any) => (
+                  <tr key={q.id}>
+                    <td>{q.quote_no}</td>
+                    <td>{q.customer_name}</td>
+                    <td>{fmtDate(q.quote_date)}</td>
+                    <td className="num">{fmtMoney(q.final_price)}</td>
+                    <td>
+                      <Badge group="quotation_status" value={q.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
-          ) : <div className="card-b muted">لا توجد عروض أسعار</div>}
+          ) : (
+            <div className="card-b muted">لا توجد عروض أسعار</div>
+          )}
         </div>
       </div>
     </div>

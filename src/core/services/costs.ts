@@ -9,7 +9,18 @@ import { marginPct } from '../calc/money';
 
 /** Direct cost categories users can record manually (acquisition lines are created by purchases/trade-ins). */
 export const MANUAL_COST_CATEGORIES = [
-  'transport', 'customs', 'registration', 'maintenance', 'parts', 'bodywork', 'paint', 'tires', 'detailing', 'insurance', 'accessories', 'other',
+  'transport',
+  'customs',
+  'registration',
+  'maintenance',
+  'parts',
+  'bodywork',
+  'paint',
+  'tires',
+  'detailing',
+  'insurance',
+  'accessories',
+  'other',
 ] as const;
 const PAY_METHODS = ['cash', 'bank_transfer', 'cheque', 'card', 'credit', 'other'] as const;
 

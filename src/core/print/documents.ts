@@ -73,29 +73,36 @@ ${body}
 </div></body></html>`;
 }
 
-const kv = (rows: [string, unknown][]) => `<div class="kv">${rows.map(([k, v]) => `<div class="k">${esc(k)}</div><div class="v">${esc(v ?? '—')}</div>`).join('')}</div>`;
+const kv = (rows: [string, unknown][]) =>
+  `<div class="kv">${rows.map(([k, v]) => `<div class="k">${esc(k)}</div><div class="v">${esc(v ?? '—')}</div>`).join('')}</div>`;
 const box = (title: string, content: string) => `<div class="box"><h3>${esc(title)}</h3>${content}</div>`;
 const money = (m: number | null | undefined, cur: string) => fmtMoney(m, { currency: cur });
 
 function customerBox(c: any) {
-  return box('بيانات العميل', kv([
-    ['الاسم', c.customer_name ?? c.name],
-    ['الكود', c.customer_code ?? c.code],
-    ['الهاتف', c.customer_phone ?? c.phone],
-    ['الرقم القومي', c.national_id],
-    ['العنوان', c.customer_address ?? c.address],
-  ]));
+  return box(
+    'بيانات العميل',
+    kv([
+      ['الاسم', c.customer_name ?? c.name],
+      ['الكود', c.customer_code ?? c.code],
+      ['الهاتف', c.customer_phone ?? c.phone],
+      ['الرقم القومي', c.national_id],
+      ['العنوان', c.customer_address ?? c.address],
+    ]),
+  );
 }
 
 function vehicleBox(v: any) {
-  return box('بيانات السيارة', kv([
-    ['السيارة', `${v.brand} ${v.model} ${v.trim ?? ''}`.trim()],
-    ['سنة الصنع', v.model_year],
-    ['اللون', v.color],
-    ['رقم المخزون', v.stock_no],
-    ['رقم الشاسيه', v.vin],
-    ['الحالة / الكيلومترات', `${label('condition', v.condition)} — ${fmtNum(v.mileage)} كم`],
-  ]));
+  return box(
+    'بيانات السيارة',
+    kv([
+      ['السيارة', `${v.brand} ${v.model} ${v.trim ?? ''}`.trim()],
+      ['سنة الصنع', v.model_year],
+      ['اللون', v.color],
+      ['رقم المخزون', v.stock_no],
+      ['رقم الشاسيه', v.vin],
+      ['الحالة / الكيلومترات', `${label('condition', v.condition)} — ${fmtNum(v.mileage)} كم`],
+    ]),
+  );
 }
 
 function scheduleTable(rows: any[], cur: string, withPaid = true) {
@@ -104,11 +111,12 @@ function scheduleTable(rows: any[], cur: string, withPaid = true) {
   return `<table><thead><tr><th>#</th><th>تاريخ الاستحقاق</th><th class="num">قيمة القسط</th>${withPaid ? '<th class="num">المدفوع</th><th class="num">المتبقي</th><th>الحالة</th><th class="num">أيام التأخير</th>' : ''}</tr></thead><tbody>
   ${rows
     .map(
-      (r) => `<tr><td>${r.seq}</td><td>${fmtDate(r.due_date)}</td><td class="num">${fmtMoney(r.amount)}</td>${
-        withPaid
-          ? `<td class="num">${fmtMoney(r.paid_amount)}</td><td class="num">${fmtMoney(r.remaining)}</td><td><span class="badge b-${r.status}">${label('installment_status', r.status)}</span></td><td class="num">${r.days_overdue || ''}</td>`
-          : ''
-      }</tr>`,
+      (r) =>
+        `<tr><td>${r.seq}</td><td>${fmtDate(r.due_date)}</td><td class="num">${fmtMoney(r.amount)}</td>${
+          withPaid
+            ? `<td class="num">${fmtMoney(r.paid_amount)}</td><td class="num">${fmtMoney(r.remaining)}</td><td><span class="badge b-${r.status}">${label('installment_status', r.status)}</span></td><td class="num">${r.days_overdue || ''}</td>`
+            : ''
+        }</tr>`,
     )
     .join('')}
   <tr class="total"><td colspan="2">الإجمالي (${cur})</td><td class="num">${fmtMoney(tot('amount'))}</td>${withPaid ? `<td class="num">${fmtMoney(tot('paid_amount'))}</td><td class="num">${fmtMoney(tot('remaining'))}</td><td></td><td></td>` : ''}</tr>
@@ -131,7 +139,13 @@ function saleSummary(s: any, cur: string) {
 }
 
 /** Builds a printable HTML document. Permission checks happen in the underlying services. */
-export function buildDocument(db: Db, ctx: Ctx, type: DocType, id: number, opts: { from?: string; to?: string; fontCss?: string } = {}): { title: string; html: string; landscape?: boolean } {
+export function buildDocument(
+  db: Db,
+  ctx: Ctx,
+  type: DocType,
+  id: number,
+  opts: { from?: string; to?: string; fontCss?: string } = {},
+): { title: string; html: string; landscape?: boolean } {
   const st = allSettings(db);
   const cur = st.currency || 'ج.م';
   const fontCss = opts.fontCss ?? '';
@@ -158,13 +172,16 @@ export function buildDocument(db: Db, ctx: Ctx, type: DocType, id: number, opts:
     case 'reservation': {
       const r = getReservation(db, ctx, { id });
       const body = `<div class="grid">${customerBox(r)}${vehicleBox(r)}</div>
-        ${box('تفاصيل الحجز', kv([
-          ['تاريخ الحجز', fmtDate(r.reservation_date)],
-          ['ينتهي في', fmtDate(r.expiry_date)],
-          ['مبلغ العربون', money(r.amount, cur)],
-          ['السعر المتفق عليه', r.agreed_price ? money(r.agreed_price, cur) : money(r.asking_price, cur)],
-          ['الحالة', label('reservation_status', r.status)],
-        ]))}
+        ${box(
+          'تفاصيل الحجز',
+          kv([
+            ['تاريخ الحجز', fmtDate(r.reservation_date)],
+            ['ينتهي في', fmtDate(r.expiry_date)],
+            ['مبلغ العربون', money(r.amount, cur)],
+            ['السعر المتفق عليه', r.agreed_price ? money(r.agreed_price, cur) : money(r.asking_price, cur)],
+            ['الحالة', label('reservation_status', r.status)],
+          ]),
+        )}
         <div class="words">استلمنا من السيد/ ${esc(r.customer_name)} مبلغ ${fmtMoney(r.amount)} ${cur} (${amountInWords(r.amount)}) كعربون حجز للسيارة الموضحة أعلاه.</div>
         ${r.notes ? `<p><b>ملاحظات:</b> ${esc(r.notes)}</p>` : ''}
         <p class="muted">في حالة عدم إتمام الشراء قبل تاريخ انتهاء الحجز يحق للمعرض إلغاء الحجز وفقاً للسياسة المتفق عليها.</p>
@@ -183,7 +200,15 @@ export function buildDocument(db: Db, ctx: Ctx, type: DocType, id: number, opts:
         ${saleSummary(s, cur)}
         <h4>المدفوعات</h4>
         <table><thead><tr><th>رقم الإيصال</th><th>التاريخ</th><th>النوع</th><th>طريقة الدفع</th><th class="num">المبلغ</th></tr></thead><tbody>
-        ${payments.filter((p: any) => p.status === 'valid').map((p: any) => `<tr><td>${esc(p.receipt_no)}</td><td>${fmtDate(p.pay_date)}</td><td>${label('payment_kind', p.kind)}</td><td>${label('pay_method', p.method)}</td><td class="num">${fmtMoney(p.amount)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">لا توجد مدفوعات</td></tr>'}
+        ${
+          payments
+            .filter((p: any) => p.status === 'valid')
+            .map(
+              (p: any) =>
+                `<tr><td>${esc(p.receipt_no)}</td><td>${fmtDate(p.pay_date)}</td><td>${label('payment_kind', p.kind)}</td><td>${label('pay_method', p.method)}</td><td class="num">${fmtMoney(p.amount)}</td></tr>`,
+            )
+            .join('') || '<tr><td colspan="5" class="muted">لا توجد مدفوعات</td></tr>'
+        }
         </tbody></table>
         <p>طريقة البيع: <b>${label('sale_type', s.sale_type)}</b> — مندوب المبيعات: <b>${esc(s.salesperson ?? '—')}</b></p>
         <div class="signs"><div>المحاسب</div><div>توقيع العميل</div><div>ختم المعرض</div></div>`;
@@ -196,17 +221,28 @@ export function buildDocument(db: Db, ctx: Ctx, type: DocType, id: number, opts:
         <p><b>الطرف الأول (البائع):</b> ${esc(st.company_name)} — ${esc(st.company_address)}</p>
         <p><b>الطرف الثاني (المشتري):</b> ${esc(s.customer_name)} — رقم قومي: ${esc(s.national_id ?? '—')} — العنوان: ${esc(s.customer_address ?? '—')} — هاتف: ${esc(s.customer_phone ?? '—')}</p>
         <p>على أن يبيع الطرف الأول للطرف الثاني السيارة الموضحة بياناتها أدناه بحالتها الراهنة التي عاينها الطرف الثاني المعاينة التامة النافية للجهالة:</p>
-        <div class="grid">${vehicleBox(s)}${box('الشروط المالية', kv([
-          ['طريقة البيع', label('sale_type', s.sale_type)],
-          ['إجمالي قيمة العقد', money(s.total_contract_value, cur)],
-          ['قيمة الاستبدال', s.trade_in_value ? money(s.trade_in_value, cur) : '—'],
-          ['العربون + المقدم', money(s.reservation_credit + s.down_payment, cur)],
-          ['المبلغ المقسط', s.financed_amount ? money(s.financed_amount, cur) : '—'],
-          ['نظام التقسيط', k ? label('plan_type', k.contract.plan_type) : '—'],
-        ]))}</div>
+        <div class="grid">${vehicleBox(s)}${box(
+          'الشروط المالية',
+          kv([
+            ['طريقة البيع', label('sale_type', s.sale_type)],
+            ['إجمالي قيمة العقد', money(s.total_contract_value, cur)],
+            ['قيمة الاستبدال', s.trade_in_value ? money(s.trade_in_value, cur) : '—'],
+            ['العربون + المقدم', money(s.reservation_credit + s.down_payment, cur)],
+            ['المبلغ المقسط', s.financed_amount ? money(s.financed_amount, cur) : '—'],
+            ['نظام التقسيط', k ? label('plan_type', k.contract.plan_type) : '—'],
+          ]),
+        )}</div>
         <div class="words">إجمالي الثمن: ${amountInWords(s.total_contract_value)}</div>
         ${tradeIn ? `<p><b>سيارة الاستبدال:</b> ${esc(`${tradeIn.brand} ${tradeIn.model} ${tradeIn.model_year}`)} — شاسيه ${esc(tradeIn.vin ?? '—')} — بقيمة ${money(tradeIn.trade_in_value, cur)}</p>` : ''}
-        ${k ? `<h4>جدول الأقساط — عقد رقم ${esc(k.contract.contract_no)}</h4>${scheduleTable(k.schedule.filter((r: any) => !r.is_cancelled), cur, false)}` : ''}
+        ${
+          k
+            ? `<h4>جدول الأقساط — عقد رقم ${esc(k.contract.contract_no)}</h4>${scheduleTable(
+                k.schedule.filter((r: any) => !r.is_cancelled),
+                cur,
+                false,
+              )}`
+            : ''
+        }
         <h4>الشروط والأحكام</h4><div class="terms">${esc(st.contract_terms)}</div>
         <div class="signs"><div>الطرف الأول (البائع)</div><div>الطرف الثاني (المشتري)</div><div>شاهد</div></div>`;
       return { title: 'عقد بيع سيارة', html: layout(st, 'عقد بيع سيارة', k?.contract.contract_no ?? s.sale_no, s.sale_date, body, fontCss) };
@@ -214,7 +250,9 @@ export function buildDocument(db: Db, ctx: Ctx, type: DocType, id: number, opts:
     case 'schedule': {
       const k = getContract(db, ctx, { id });
       const c = k.contract;
-      const body = `<div class="grid">${customerBox(c)}${box('بيانات العقد', kv([
+      const body = `<div class="grid">${customerBox(c)}${box(
+        'بيانات العقد',
+        kv([
           ['رقم العقد', c.contract_no],
           ['رقم البيع', c.sale_no],
           ['السيارة', `${c.brand} ${c.model} ${c.model_year} (${c.stock_no})`],
@@ -223,37 +261,58 @@ export function buildDocument(db: Db, ctx: Ctx, type: DocType, id: number, opts:
           ['المتبقي', money(c.remaining, cur)],
           ['المتأخر', money(c.overdue_amount, cur)],
           ['الحالة', label('contract_status', c.status)],
-        ]))}</div>${scheduleTable(k.schedule, cur)}
-        ${k.reschedules.length ? `<p class="muted">تمت إعادة جدولة العقد ${k.reschedules.length} مرة. الأقساط الملغاة موضحة بخط مشطوب.</p>` : ''}`;
-      return { title: 'جدول الأقساط', html: layout(st, 'جدول الأقساط', c.contract_no, localDateTime().slice(0, 10), body, fontCss) };
+        ]),
+      )}</div>${scheduleTable(k.schedule, cur)}
+        ${k.reschedules.length ? `<p class="muted">تمت إعادة جدولة العقد ${k.reschedules.length} مرة. الأقساط الملغاة موضحة بخط مشطوب.</p>` : ''}
+        <h4>المدفوعات على العقد</h4>
+        <table><thead><tr><th>رقم الإيصال</th><th>التاريخ</th><th>النوع</th><th>الأقساط</th><th>طريقة الدفع</th><th class="num">المبلغ</th><th>الحالة</th></tr></thead><tbody>
+        ${k.payments.map((p: any) => `<tr><td>${esc(p.receipt_no)}</td><td>${fmtDate(p.pay_date)}</td><td>${label('payment_kind', p.kind)}</td><td>${esc(p.installments ?? '—')}</td><td>${label('pay_method', p.method)}</td><td class="num">${fmtMoney(p.amount)}</td><td>${label('payment_status', p.status)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">لا توجد مدفوعات</td></tr>'}
+        </tbody></table>`;
+      return {
+        title: 'كشف حساب العقد وجدول الأقساط',
+        html: layout(st, 'كشف حساب العقد وجدول الأقساط', c.contract_no, localDateTime().slice(0, 10), body, fontCss),
+      };
     }
     case 'receipt': {
       const { payment: p, allocations, contractRemaining } = getPayment(db, ctx, { id });
       const isRefund = p.kind === 'refund';
       const body = `${p.status === 'voided' ? '<p class="words neg">هذا الإيصال ملغي — السبب: ' + esc(p.void_reason) + '</p>' : ''}
-        <div class="grid">${customerBox(p)}${box('بيانات الدفعة', kv([
-          ['نوع الدفعة', label('payment_kind', p.kind)],
-          ['طريقة الدفع', label('pay_method', p.method)],
-          ['المرجع', p.reference],
-          ['العقد / البيع', p.contract_no ?? p.sale_no ?? p.reservation_no],
-          ['السيارة', p.brand ? `${p.brand} ${p.model} ${p.model_year}` : '—'],
-        ]))}</div>
+        <div class="grid">${customerBox(p)}${box(
+          'بيانات الدفعة',
+          kv([
+            ['نوع الدفعة', label('payment_kind', p.kind)],
+            ['طريقة الدفع', label('pay_method', p.method)],
+            ['المرجع', p.reference],
+            ['العقد / البيع', p.contract_no ?? p.sale_no ?? p.reservation_no],
+            ['السيارة', p.brand ? `${p.brand} ${p.model} ${p.model_year}` : '—'],
+          ]),
+        )}</div>
         <div class="words">${isRefund ? 'صرفنا إلى' : 'استلمنا من'} السيد/ ${esc(p.customer_name)} مبلغ ${fmtMoney(p.amount)} ${cur}<br>${amountInWords(p.amount)}</div>
-        ${allocations.length ? `<h4>توزيع الدفعة على الأقساط</h4><table><thead><tr><th>القسط</th><th>تاريخ الاستحقاق</th><th class="num">قيمة القسط</th><th class="num">المسدد من هذه الدفعة</th></tr></thead><tbody>
-          ${allocations.map((a: any) => `<tr><td>${a.seq}</td><td>${fmtDate(a.due_date)}</td><td class="num">${fmtMoney(a.installment_amount)}</td><td class="num">${fmtMoney(a.amount)}</td></tr>`).join('')}</tbody></table>` : ''}
+        ${
+          allocations.length
+            ? `<h4>توزيع الدفعة على الأقساط</h4><table><thead><tr><th>القسط</th><th>تاريخ الاستحقاق</th><th class="num">قيمة القسط</th><th class="num">المسدد من هذه الدفعة</th></tr></thead><tbody>
+          ${allocations.map((a: any) => `<tr><td>${a.seq}</td><td>${fmtDate(a.due_date)}</td><td class="num">${fmtMoney(a.installment_amount)}</td><td class="num">${fmtMoney(a.amount)}</td></tr>`).join('')}</tbody></table>`
+            : ''
+        }
         ${contractRemaining !== null ? `<p>الرصيد المتبقي على العقد بعد هذه الدفعة: <b>${money(contractRemaining, cur)}</b></p>` : ''}
         ${p.notes ? `<p><b>ملاحظات:</b> ${esc(p.notes)}</p>` : ''}
         <div class="signs"><div>المستلم: ${esc(p.user_name)}</div><div>توقيع العميل</div></div>`;
-      return { title: isRefund ? 'إيصال صرف' : 'إيصال استلام نقدية', html: layout(st, isRefund ? 'إيصال صرف' : 'إيصال استلام نقدية', p.receipt_no, p.pay_date, body, fontCss) };
+      return {
+        title: isRefund ? 'إيصال صرف' : 'إيصال استلام نقدية',
+        html: layout(st, isRefund ? 'إيصال صرف' : 'إيصال استلام نقدية', p.receipt_no, p.pay_date, body, fontCss),
+      };
     }
     case 'statement': {
       const s = customerStatement(db, ctx, { id, from: opts.from, to: opts.to });
-      const body = `<div class="grid">${customerBox(s.customer)}${box('الفترة', kv([
+      const body = `<div class="grid">${customerBox(s.customer)}${box(
+        'الفترة',
+        kv([
           ['من', opts.from ? fmtDate(opts.from) : 'بداية التعامل'],
           ['إلى', opts.to ? fmtDate(opts.to) : 'اليوم'],
           ['الرصيد الافتتاحي', money(s.opening, cur)],
           ['الرصيد الختامي', money(s.closing, cur)],
-        ]))}</div>
+        ]),
+      )}</div>
         <table><thead><tr><th>التاريخ</th><th>المرجع</th><th>البيان</th><th class="num">مدين</th><th class="num">دائن</th><th class="num">الرصيد</th></tr></thead><tbody>
         ${s.opening ? `<tr><td></td><td></td><td>رصيد افتتاحي</td><td></td><td></td><td class="num">${fmtMoney(s.opening)}</td></tr>` : ''}
         ${s.rows.map((r: any) => `<tr><td>${fmtDate(r.date)}</td><td>${esc(r.ref)}</td><td>${esc(r.description)}</td><td class="num">${r.debit ? fmtMoney(r.debit) : ''}</td><td class="num">${r.credit ? fmtMoney(r.credit) : ''}</td><td class="num">${fmtMoney(r.balance)}</td></tr>`).join('')}
@@ -266,7 +325,9 @@ export function buildDocument(db: Db, ctx: Ctx, type: DocType, id: number, opts:
       const c = costCard(db, ctx, { vehicle_id: id });
       const v = c.vehicle;
       const t = c.totals;
-      const body = `<div class="grid">${vehicleBox(v)}${box('ملخص التكلفة والتسعير', kv([
+      const body = `<div class="grid">${vehicleBox(v)}${box(
+        'ملخص التكلفة والتسعير',
+        kv([
           ['تكلفة الاقتناء', money(t.acquisition_cost, cur)],
           ['التكاليف المباشرة', money(t.direct_costs, cur)],
           ['التكلفة الفعلية', money(t.actual_cost, cur)],
@@ -276,7 +337,8 @@ export function buildDocument(db: Db, ctx: Ctx, type: DocType, id: number, opts:
           ['سعر البيع الفعلي', t.selling_price !== null ? money(t.selling_price, cur) : 'لم تُبع بعد'],
           ['مجمل الربح الفعلي', t.gross_profit !== null ? `${money(t.gross_profit, cur)} (${fmtPct(t.gross_margin)})` : '—'],
           ['أيام بالمخزون', v.days_in_stock],
-        ]))}</div>
+        ]),
+      )}</div>
         <table><thead><tr><th>التاريخ</th><th>رقم البند</th><th>البند</th><th>الوصف</th><th>المورد</th><th class="num">المبلغ</th></tr></thead><tbody>
         ${c.lines.map((l: any) => `<tr><td>${fmtDate(l.expense_date)}</td><td>${esc(l.expense_no)}</td><td>${label('cost_category', l.category)}</td><td>${esc(l.description ?? '')}</td><td>${esc(l.supplier_name ?? '')}</td><td class="num">${fmtMoney(l.amount)}</td></tr>`).join('')}
         <tr class="total"><td colspan="5">التكلفة الفعلية (${cur})</td><td class="num">${fmtMoney(t.actual_cost)}</td></tr></tbody></table>`;
@@ -284,8 +346,24 @@ export function buildDocument(db: Db, ctx: Ctx, type: DocType, id: number, opts:
     }
     case 'purchase': {
       const p = getPurchase(db, ctx, { id });
-      const body = `<div class="grid">${box('المورد / البائع', kv([['الاسم', p.supplier_name], ['النوع', label('supplier_type', p.supplier_type)], ['الهاتف', p.supplier_phone], ['العنوان', p.supplier_address]]))}
-        ${box('السيارة', kv([['السيارة', `${p.brand} ${p.model} ${p.model_year}`], ['رقم المخزون', p.stock_no], ['الشاسيه', p.vin], ['اللون', p.color]]))}</div>
+      const body = `<div class="grid">${box(
+        'المورد / البائع',
+        kv([
+          ['الاسم', p.supplier_name],
+          ['النوع', label('supplier_type', p.supplier_type)],
+          ['الهاتف', p.supplier_phone],
+          ['العنوان', p.supplier_address],
+        ]),
+      )}
+        ${box(
+          'السيارة',
+          kv([
+            ['السيارة', `${p.brand} ${p.model} ${p.model_year}`],
+            ['رقم المخزون', p.stock_no],
+            ['الشاسيه', p.vin],
+            ['اللون', p.color],
+          ]),
+        )}</div>
         <table class="summary"><tbody><tr><td>سعر الشراء</td><td class="num">${money(p.purchase_price, cur)}</td></tr><tr><td>المدفوع</td><td class="num">${money(p.paid_amount, cur)}</td></tr><tr class="total"><td>المتبقي للمورد</td><td class="num">${money(p.balance, cur)}</td></tr></tbody></table>
         <div class="words">${amountInWords(p.purchase_price)}</div>
         <div class="signs"><div>البائع</div><div>المشتري (المعرض)</div></div>`;
@@ -297,7 +375,12 @@ export function buildDocument(db: Db, ctx: Ctx, type: DocType, id: number, opts:
 }
 
 /** Printable version of any report result (landscape when wide). */
-export function buildReportHtml(db: Db, ctx: Ctx, report: { title: string; columns: any[]; rows: any[]; totals: Record<string, number>; filters?: any }, fontCss = '') {
+export function buildReportHtml(
+  db: Db,
+  ctx: Ctx,
+  report: { title: string; columns: any[]; rows: any[]; totals: Record<string, number>; filters?: any },
+  fontCss = '',
+) {
   requirePerm(ctx, 'reports.view');
   const st = allSettings(db);
   const cur = st.currency || 'ج.م';

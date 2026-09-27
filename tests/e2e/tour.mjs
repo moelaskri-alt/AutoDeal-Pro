@@ -24,7 +24,12 @@ try {
     const contracts = await c('installments.contracts', { pageSize: 10 });
     const customers = await c('customers.list', { pageSize: 10 });
     const veh = await c('vehicles.list', { pageSize: 10, filters: {} });
-    return { sale: sales.rows[0].id, contract: contracts.rows.find((x) => x.overdue_amount > 0)?.id ?? contracts.rows[0].id, customer: customers.rows.find((x) => x.overdue > 0)?.id ?? customers.rows[0].id, vehicle: veh.rows.find((v) => v.status !== 'sold')?.id ?? veh.rows[0].id };
+    return {
+      sale: sales.rows[0].id,
+      contract: contracts.rows.find((x) => x.overdue_amount > 0)?.id ?? contracts.rows[0].id,
+      customer: customers.rows.find((x) => x.overdue > 0)?.id ?? customers.rows[0].id,
+      vehicle: veh.rows.find((v) => v.status !== 'sold')?.id ?? veh.rows[0].id,
+    };
   });
 
   const screens = [
@@ -51,7 +56,11 @@ try {
     ['settings', '#/settings'],
     ['backup', '#/backup'],
   ];
-  for (const [w, h] of [[1366, 768], [1920, 1080], [2560, 1440]]) {
+  for (const [w, h] of [
+    [1366, 768],
+    [1920, 1080],
+    [2560, 1440],
+  ]) {
     await setSize(app, page, w, h);
     const dir = ensureDir(path.join(shots, `${w}x${h}`));
     for (const [name, hash] of screens) {
@@ -59,7 +68,8 @@ try {
       await page.waitForTimeout(300);
       const issues = await layoutIssues(page);
       if (issues.length) report.push({ size: `${w}x${h}`, screen: name, issues });
-      if (w === 1366 || ['dashboard', 'vehicles', 'sale-new', 'contract-detail', 'reports'].includes(name)) await page.screenshot({ path: path.join(dir, `${name}.png`) });
+      if (w === 1366 || ['dashboard', 'vehicles', 'sale-new', 'contract-detail', 'reports'].includes(name))
+        await page.screenshot({ path: path.join(dir, `${name}.png`) });
     }
   }
   // Tabs on detail pages + modals at the smallest size

@@ -85,7 +85,9 @@ describe('§26/§42 users, password hashing & role permissions', () => {
     const ctx = adminCtx(db);
     const other = userCtx(db, 'manager');
     void other;
-    expect(() => api(db, ctx)('users.update', { id: 1, full_name: 'x', role_id: db.scalar('SELECT id FROM roles WHERE code = ?', ['manager']), is_active: 1 })).toThrowError(/آخر مدير/);
+    expect(() =>
+      api(db, ctx)('users.update', { id: 1, full_name: 'x', role_id: db.scalar('SELECT id FROM roles WHERE code = ?', ['manager']), is_active: 1 }),
+    ).toThrowError(/آخر مدير/);
   });
 });
 

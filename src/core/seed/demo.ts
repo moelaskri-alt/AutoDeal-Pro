@@ -94,7 +94,15 @@ export function seedDemo(db: Db, adminCtx: Ctx) {
           transmission: 'أوتوماتيك',
           fuel_type: 'بنزين',
           body_type: ['Tucson', 'Sportage', 'Fortuner', 'Tiggo 7 Pro', 'ZS', 'Duster', '3008'].includes(model) ? 'SUV' : 'سيدان',
-          origin_country: ['Toyota', 'Nissan', 'Mitsubishi'].includes(brand) ? 'اليابان' : ['Hyundai', 'Kia'].includes(brand) ? 'كوريا' : ['BMW', 'Mercedes', 'Skoda'].includes(brand) ? 'ألمانيا' : ['Chery', 'MG'].includes(brand) ? 'الصين' : 'فرنسا',
+          origin_country: ['Toyota', 'Nissan', 'Mitsubishi'].includes(brand)
+            ? 'اليابان'
+            : ['Hyundai', 'Kia'].includes(brand)
+              ? 'كوريا'
+              : ['BMW', 'Mercedes', 'Skoda'].includes(brand)
+                ? 'ألمانيا'
+                : ['Chery', 'MG'].includes(brand)
+                  ? 'الصين'
+                  : 'فرنسا',
           asking_price: M(asking),
           min_price: M(min),
         },
@@ -124,7 +132,8 @@ export function seedDemo(db: Db, adminCtx: Ctx) {
     cost(veh[18], 14, 'insurance', 4200, 'تأمين مؤقت');
 
     // ---------------------------------------------------------------- customers
-    const cust = (name: string, phone: string, national_id: string, address: string, extra: any = {}) => call('customers.create', { name, phone, national_id, address, ...extra }).id;
+    const cust = (name: string, phone: string, national_id: string, address: string, extra: any = {}) =>
+      call('customers.create', { name, phone, national_id, address, ...extra }).id;
     const c1 = cust('أحمد محمود السيد', '01001234567', '28501011234567', 'القاهرة - مصر الجديدة', { email: 'ahmed@example.com' });
     const c2 = cust('منى عبد الرحمن', '01112345678', '29003151234568', 'الجيزة - الدقي');
     const c3 = cust('شركة الأفق للتجارة', '0233445566', '51234567', 'القاهرة - التجمع الخامس', { customer_type: 'company' });
@@ -133,38 +142,121 @@ export function seedDemo(db: Db, adminCtx: Ctx) {
     const c6 = cust('هبة سامي', '01098765432', '29506091234571', 'القاهرة - مدينة نصر');
 
     // ---------------------------------------------------------------- leads + follow-ups
-    const lead = (name: string, phone: string, source: string, status: string, vehicle_id: number | null, interest: string, next: string | null, customer_id?: number) =>
-      call('leads.create', { name, phone, source, status, vehicle_id, interest, next_follow_up: next, customer_id, assigned_to: uid.sales, budget: M(1500000) }).id;
+    const lead = (
+      name: string,
+      phone: string,
+      source: string,
+      status: string,
+      vehicle_id: number | null,
+      interest: string,
+      next: string | null,
+      customer_id?: number,
+    ) =>
+      call('leads.create', { name, phone, source, status, vehicle_id, interest, next_follow_up: next, customer_id, assigned_to: uid.sales, budget: M(1500000) })
+        .id;
     const l1 = lead('كريم مصطفى', '01005556677', 'facebook', 'interested', veh[6], 'مهتم بـ Chery Tiggo 7 Pro بالتقسيط', d(-2));
     const l2 = lead('نادية فؤاد', '01117778899', 'walk_in', 'negotiating', veh[9], 'تفاوض على سعر Skoda Octavia', T);
     lead('سامح عادل', '01229990011', 'instagram', 'new', null, 'يبحث عن SUV مستعمل حتى 1.3 مليون', d(-1));
     lead('هبة سامي', '01098765432', 'referral', 'reserved', veh[17], 'حجزت Peugeot 3008', null, c6);
     lead('طارق جمال', '01550001122', 'website', 'lost', veh[5], 'فضّل سيارة من معرض آخر', null);
-    call('leads.addFollowUp', { lead_id: l1, follow_date: d(3), method: 'call', notes: 'تم إرسال عرض سعر بالتقسيط، ينتظر موافقة البنك', next_follow_up: d(-2) });
-    call('leads.addFollowUp', { lead_id: l2, follow_date: d(1), method: 'visit', notes: 'زار المعرض وجرب السيارة، يطلب خصم 40 ألف', next_follow_up: T, status: 'negotiating' });
+    call('leads.addFollowUp', {
+      lead_id: l1,
+      follow_date: d(3),
+      method: 'call',
+      notes: 'تم إرسال عرض سعر بالتقسيط، ينتظر موافقة البنك',
+      next_follow_up: d(-2),
+    });
+    call('leads.addFollowUp', {
+      lead_id: l2,
+      follow_date: d(1),
+      method: 'visit',
+      notes: 'زار المعرض وجرب السيارة، يطلب خصم 40 ألف',
+      next_follow_up: T,
+      status: 'negotiating',
+    });
 
     // ---------------------------------------------------------------- quotations
-    call('quotations.create', { customer_id: c5, vehicle_id: veh[6], quote_date: d(4), asking_price: M(1450000), discount: M(25000), payment_method: 'installments', down_payment: M(600000), months: 24, valid_until: d(-10), notes: 'عرض خاص شامل التأمين للسنة الأولى' });
-    call('quotations.create', { customer_id: c2, vehicle_id: veh[9], quote_date: d(2), asking_price: M(1960000), discount: M(30000), payment_method: 'cash', valid_until: d(-12) });
+    call('quotations.create', {
+      customer_id: c5,
+      vehicle_id: veh[6],
+      quote_date: d(4),
+      asking_price: M(1450000),
+      discount: M(25000),
+      payment_method: 'installments',
+      down_payment: M(600000),
+      months: 24,
+      valid_until: d(-10),
+      notes: 'عرض خاص شامل التأمين للسنة الأولى',
+    });
+    call('quotations.create', {
+      customer_id: c2,
+      vehicle_id: veh[9],
+      quote_date: d(2),
+      asking_price: M(1960000),
+      discount: M(30000),
+      payment_method: 'cash',
+      valid_until: d(-12),
+    });
 
     // ---------------------------------------------------------------- sales
     const sp = (id: number) => ({ salesperson_id: id });
     // 1. CASH – new Corolla
-    call('sales.create', { customer_id: c1, vehicle_id: veh[0], sale_type: 'cash', sale_date: d(40), list_price: M(1480000), discount: M(20000), fees: M(15000), method: 'bank_transfer', reference: 'TRX-88001', ...sp(uid.sales) });
+    call('sales.create', {
+      customer_id: c1,
+      vehicle_id: veh[0],
+      sale_type: 'cash',
+      sale_date: d(40),
+      list_price: M(1480000),
+      discount: M(20000),
+      fees: M(15000),
+      method: 'bank_transfer',
+      reference: 'TRX-88001',
+      ...sp(uid.sales),
+    });
     // 2. CASH – used Tucson (+ sale-related expense)
-    const s2 = call('sales.create', { customer_id: c3, vehicle_id: veh[10], sale_type: 'cash', sale_date: d(20), list_price: M(1320000), discount: M(10000), method: 'cheque', reference: 'CHQ-45120', ...sp(uid.sales2) });
-    call('expenses.create', { expense_date: d(20), scope: 'sale', sale_id: s2.id, category: 'commission', description: 'عمولة وسيط البيع', amount: M(10000), payee: 'وسيط' });
+    const s2 = call('sales.create', {
+      customer_id: c3,
+      vehicle_id: veh[10],
+      sale_type: 'cash',
+      sale_date: d(20),
+      list_price: M(1320000),
+      discount: M(10000),
+      method: 'cheque',
+      reference: 'CHQ-45120',
+      ...sp(uid.sales2),
+    });
+    call('expenses.create', {
+      expense_date: d(20),
+      scope: 'sale',
+      sale_id: s2.id,
+      category: 'commission',
+      description: 'عمولة وسيط البيع',
+      amount: M(10000),
+      payee: 'وسيط',
+    });
     // 3. INSTALLMENTS – equal monthly with down payment (new Sportage)
     const s3 = call('sales.create', {
-      customer_id: c4, vehicle_id: veh[3], sale_type: 'installments', sale_date: d(100), list_price: M(2090000), discount: M(50000), down_payment: M(640000),
-      plan: { plan_type: 'equal', count: 24, first_due_date: addMonths(d(100), 1) }, ...sp(uid.sales),
+      customer_id: c4,
+      vehicle_id: veh[3],
+      sale_type: 'installments',
+      sale_date: d(100),
+      list_price: M(2090000),
+      discount: M(50000),
+      down_payment: M(640000),
+      plan: { plan_type: 'equal', count: 24, first_due_date: addMonths(d(100), 1) },
+      ...sp(uid.sales),
     });
     // pay installments that are due, on time (the 3 due ones)
     const due3 = db.all<any>('SELECT id, due_date, amount FROM installments WHERE contract_id = ? AND due_date <= ? ORDER BY seq', [s3.contract_id, T]);
     due3.forEach((i: any) => call('payments.create', { contract_id: s3.contract_id, amount: i.amount, pay_date: i.due_date, method: 'cash' }));
     // 4. INSTALLMENTS – custom schedule with partial + overdue (used Sunny)
     const s4 = call('sales.create', {
-      customer_id: c2, vehicle_id: veh[13], sale_type: 'installments', sale_date: d(75), list_price: M(560000), down_payment: M(160000),
+      customer_id: c2,
+      vehicle_id: veh[13],
+      sale_type: 'installments',
+      sale_date: d(75),
+      list_price: M(560000),
+      down_payment: M(160000),
       plan: {
         plan_type: 'custom',
         lines: [
@@ -181,31 +273,91 @@ export function seedDemo(db: Db, adminCtx: Ctx) {
     call('payments.create', { contract_id: s4.contract_id, amount: M(25000), pay_date: d(12), method: 'cash', notes: 'دفعة جزئية' }); // partial → overdue
     // 5. TRADE-IN + INSTALLMENTS (balloon) – used Mercedes, customer trades in an Elantra
     const ti = call('tradeins.create', {
-      customer_id: c5, brand: 'Hyundai', model: 'Elantra', trim: 'HD', model_year: 2016, color: 'فضي', vin: 'TRDHYU00000016001', mileage: 160000,
-      condition_grade: 'good', condition_notes: 'حالة جيدة، يحتاج دهان جزئي', market_value: M(480000), trade_in_value: M(440000),
-      expected_prep_cost: M(25000), expected_selling_price: M(530000), eval_date: d(31),
+      customer_id: c5,
+      brand: 'Hyundai',
+      model: 'Elantra',
+      trim: 'HD',
+      model_year: 2016,
+      color: 'فضي',
+      vin: 'TRDHYU00000016001',
+      mileage: 160000,
+      condition_grade: 'good',
+      condition_notes: 'حالة جيدة، يحتاج دهان جزئي',
+      market_value: M(480000),
+      trade_in_value: M(440000),
+      expected_prep_cost: M(25000),
+      expected_selling_price: M(530000),
+      eval_date: d(31),
     });
     const s5 = call('sales.create', {
-      customer_id: c5, vehicle_id: veh[12], sale_type: 'trade_in_installments', sale_date: d(30), list_price: M(2150000), discount: M(50000), trade_in_id: ti.id,
-      down_payment: M(460000), plan: { plan_type: 'balloon', count: 12, regular_amount: M(80000), first_due_date: addMonths(d(30), 1) }, ...sp(uid.sales),
+      customer_id: c5,
+      vehicle_id: veh[12],
+      sale_type: 'trade_in_installments',
+      sale_date: d(30),
+      list_price: M(2150000),
+      discount: M(50000),
+      trade_in_id: ti.id,
+      down_payment: M(460000),
+      plan: { plan_type: 'balloon', count: 12, regular_amount: M(80000), first_due_date: addMonths(d(30), 1) },
+      ...sp(uid.sales),
     });
     const firstS5 = db.get<any>('SELECT amount, due_date FROM installments WHERE contract_id = ? ORDER BY seq LIMIT 1', [s5.contract_id]);
-    if (firstS5.due_date <= T) call('payments.create', { contract_id: s5.contract_id, amount: firstS5.amount, pay_date: firstS5.due_date, method: 'bank_transfer', reference: 'TRX-99120' });
+    if (firstS5.due_date <= T)
+      call('payments.create', {
+        contract_id: s5.contract_id,
+        amount: firstS5.amount,
+        pay_date: firstS5.due_date,
+        method: 'bank_transfer',
+        reference: 'TRX-99120',
+      });
     // trade-in vehicle gets its preparation cost
-    call('costs.create', { vehicle_id: s5.trade_in_vehicle_id, expense_date: d(25), category: 'paint', amount: M(18000), description: 'دهان جزئي', supplier_id: workshop });
+    call('costs.create', {
+      vehicle_id: s5.trade_in_vehicle_id,
+      expense_date: d(25),
+      category: 'paint',
+      amount: M(18000),
+      description: 'دهان جزئي',
+      supplier_id: workshop,
+    });
     call('costs.create', { vehicle_id: s5.trade_in_vehicle_id, expense_date: d(24), category: 'detailing', amount: M(3000), description: 'تنظيف وتلميع' });
 
     // ---------------------------------------------------------------- reservation (active)
-    call('reservations.create', { customer_id: c6, vehicle_id: veh[17], reservation_date: d(2), expiry_date: d(-5), amount: M(50000), agreed_price: M(1180000), method: 'cash', notes: 'حجز لحين تجهيز باقي المبلغ' });
+    call('reservations.create', {
+      customer_id: c6,
+      vehicle_id: veh[17],
+      reservation_date: d(2),
+      expiry_date: d(-5),
+      amount: M(50000),
+      agreed_price: M(1180000),
+      method: 'cash',
+      notes: 'حجز لحين تجهيز باقي المبلغ',
+    });
 
     // ---------------------------------------------------------------- general expenses (3 months)
     for (let m = 0; m < 4; m++) {
       const day = addMonths(T.slice(0, 8) + '01', -m);
       if (day > T) continue;
       call('expenses.create', { expense_date: day, category: 'rent', description: 'إيجار المعرض', amount: M(45000), payment_method: 'bank_transfer' });
-      call('expenses.create', { expense_date: addDays(day, 1) > T ? day : addDays(day, 1), category: 'salaries', description: 'رواتب الموظفين', amount: M(85000), payment_method: 'bank_transfer' });
-      call('expenses.create', { expense_date: addDays(day, 4) > T ? day : addDays(day, 4), category: 'electricity', description: 'فاتورة الكهرباء', amount: M(6500) });
-      call('expenses.create', { expense_date: addDays(day, 6) > T ? day : addDays(day, 6), category: 'marketing', description: 'إعلانات فيسبوك', amount: M(12000), payment_method: 'card' });
+      call('expenses.create', {
+        expense_date: addDays(day, 1) > T ? day : addDays(day, 1),
+        category: 'salaries',
+        description: 'رواتب الموظفين',
+        amount: M(85000),
+        payment_method: 'bank_transfer',
+      });
+      call('expenses.create', {
+        expense_date: addDays(day, 4) > T ? day : addDays(day, 4),
+        category: 'electricity',
+        description: 'فاتورة الكهرباء',
+        amount: M(6500),
+      });
+      call('expenses.create', {
+        expense_date: addDays(day, 6) > T ? day : addDays(day, 6),
+        category: 'marketing',
+        description: 'إعلانات فيسبوك',
+        amount: M(12000),
+        payment_method: 'card',
+      });
     }
     call('expenses.create', { expense_date: d(3), category: 'office', description: 'أدوات مكتبية وطباعة', amount: M(1800) });
 

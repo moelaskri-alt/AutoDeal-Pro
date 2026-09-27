@@ -17,7 +17,9 @@ fs.writeFileSync('build-resources/icon.svg', svg);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
 for (const size of [512, 256]) {
   const page = await browser.newPage({ viewport: { width: size, height: size }, deviceScaleFactor: 1 });
-  await page.setContent(`<html><body style="margin:0;background:transparent">${svg.replace('width="512" height="512"', `width="${size}" height="${size}"`)}</body></html>`);
+  await page.setContent(
+    `<html><body style="margin:0;background:transparent">${svg.replace('width="512" height="512"', `width="${size}" height="${size}"`)}</body></html>`,
+  );
   await page.screenshot({ path: size === 512 ? 'build-resources/icon.png' : `build-resources/icon-${size}.png`, omitBackground: true });
   await page.close();
 }

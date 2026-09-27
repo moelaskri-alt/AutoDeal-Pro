@@ -52,7 +52,8 @@ export function writeCsv(file: string, t: TableExport) {
   };
   const lines = [t.columns.map((c) => q(c.label)).join(',')];
   for (const r of t.rows) lines.push(t.columns.map((c) => q(cell(c, r[c.key]))).join(','));
-  if (t.totals && Object.keys(t.totals).length) lines.push(t.columns.map((c, i) => (i === 0 ? 'الإجمالي' : t.totals![c.key] !== undefined ? q(cell(c, t.totals![c.key])) : '')).join(','));
+  if (t.totals && Object.keys(t.totals).length)
+    lines.push(t.columns.map((c, i) => (i === 0 ? 'الإجمالي' : t.totals![c.key] !== undefined ? q(cell(c, t.totals![c.key])) : '')).join(','));
   fs.writeFileSync(file, '﻿' + lines.join('\r\n'), 'utf8');
 }
 
@@ -128,7 +129,12 @@ export async function savePdfFrom(win: BrowserWindow, suggestedName: string): Pr
   const file = await chooseSavePath(win, suggestedName.endsWith('.pdf') ? suggestedName : `${suggestedName}.pdf`, [{ name: 'PDF', extensions: ['pdf'] }]);
   if (!file) return null;
   await win.webContents.executeJavaScript(`document.querySelectorAll('.no-print').forEach(e=>e.style.display='none')`);
-  const data = await win.webContents.printToPDF({ pageSize: 'A4', landscape: !!(win as any).__adpLandscape, printBackground: true, margins: { marginType: 'default' } });
+  const data = await win.webContents.printToPDF({
+    pageSize: 'A4',
+    landscape: !!(win as any).__adpLandscape,
+    printBackground: true,
+    margins: { marginType: 'default' },
+  });
   await win.webContents.executeJavaScript(`document.querySelectorAll('.no-print').forEach(e=>e.style.display='')`);
   fs.writeFileSync(file, data);
   if (!process.env.AUTODEAL_E2E_OUT) shell.showItemInFolder(file);

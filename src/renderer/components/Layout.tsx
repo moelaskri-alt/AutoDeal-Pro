@@ -27,7 +27,7 @@ export const NAV: { to: string; label: string; icon: string; perm: string; secti
 export const allowed = (can: (p: string) => boolean, perm: string) => perm.split('|').some((p) => can(p));
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { user, can, logout } = useAuth();
+  const { user, can, logout, mustChangePassword, clearMustChange } = useAuth();
   const { confirm } = useUi();
   const loc = useLocation();
   const [pw, setPw] = useState(false);
@@ -85,6 +85,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <main className="content">{children}</main>
       </div>
       {pw && <ChangePasswordModal onClose={() => setPw(false)} />}
+      {mustChangePassword && !pw && <ChangePasswordModal forced onClose={clearMustChange} />}
     </div>
   );
 }

@@ -2,7 +2,19 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Icon } from './Icon';
 import { fmtMoney, label, LABELS } from '../../core/format';
 
-export function Modal({ title, onClose, children, footer, size = 'md' }: { title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode; size?: 'sm' | 'md' | 'lg' | 'xl' }) {
+export function Modal({
+  title,
+  onClose,
+  children,
+  footer,
+  size = 'md',
+}: {
+  title: ReactNode;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+}) {
   useEffect(() => {
     const h = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', h);
@@ -24,7 +36,19 @@ export function Modal({ title, onClose, children, footer, size = 'md' }: { title
   );
 }
 
-export function Field({ label: l, required, hint, children, full }: { label: ReactNode; required?: boolean; hint?: ReactNode; children: ReactNode; full?: boolean }) {
+export function Field({
+  label: l,
+  required,
+  hint,
+  children,
+  full,
+}: {
+  label: ReactNode;
+  required?: boolean;
+  hint?: ReactNode;
+  children: ReactNode;
+  full?: boolean;
+}) {
   return (
     <div className={`field${full ? ' full' : ''}`}>
       <label>
@@ -36,7 +60,16 @@ export function Field({ label: l, required, hint, children, full }: { label: Rea
   );
 }
 
-export function TextInput(p: { value: any; onChange: (v: string) => void; placeholder?: string; ltr?: boolean; disabled?: boolean; type?: string; autoFocus?: boolean; name?: string }) {
+export function TextInput(p: {
+  value: any;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  ltr?: boolean;
+  disabled?: boolean;
+  type?: string;
+  autoFocus?: boolean;
+  name?: string;
+}) {
   return (
     <input
       className={`input${p.ltr ? ' ltr' : ''}`}
@@ -51,7 +84,14 @@ export function TextInput(p: { value: any; onChange: (v: string) => void; placeh
   );
 }
 
-export function NumberInput(p: { value: number | null | undefined; onChange: (v: number | null) => void; min?: number; max?: number; disabled?: boolean; name?: string }) {
+export function NumberInput(p: {
+  value: number | null | undefined;
+  onChange: (v: number | null) => void;
+  min?: number;
+  max?: number;
+  disabled?: boolean;
+  name?: string;
+}) {
   return (
     <input
       className="input ltr"
@@ -67,7 +107,19 @@ export function NumberInput(p: { value: number | null | undefined; onChange: (v:
 }
 
 /** Money input: user types major units; value is minor units (integer). */
-export function MoneyInput({ value, onChange, disabled, name, placeholder }: { value: number | null | undefined; onChange: (v: number | null) => void; disabled?: boolean; name?: string; placeholder?: string }) {
+export function MoneyInput({
+  value,
+  onChange,
+  disabled,
+  name,
+  placeholder,
+}: {
+  value: number | null | undefined;
+  onChange: (v: number | null) => void;
+  disabled?: boolean;
+  name?: string;
+  placeholder?: string;
+}) {
   const [text, setText] = useState(value == null ? '' : fmtMoney(value));
   const [focused, setFocused] = useState(false);
   useEffect(() => {
@@ -97,11 +149,35 @@ export function MoneyInput({ value, onChange, disabled, name, placeholder }: { v
   );
 }
 
-export function DateInput({ value, onChange, disabled, name }: { value: string | null | undefined; onChange: (v: string) => void; disabled?: boolean; name?: string }) {
+export function DateInput({
+  value,
+  onChange,
+  disabled,
+  name,
+}: {
+  value: string | null | undefined;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+  name?: string;
+}) {
   return <input className="input ltr" name={name} type="date" value={value ?? ''} disabled={disabled} onChange={(e) => onChange(e.target.value)} />;
 }
 
-export function Select({ value, onChange, options, placeholder, disabled, name }: { value: any; onChange: (v: string) => void; options: [string | number, string][]; placeholder?: string; disabled?: boolean; name?: string }) {
+export function Select({
+  value,
+  onChange,
+  options,
+  placeholder,
+  disabled,
+  name,
+}: {
+  value: any;
+  onChange: (v: string) => void;
+  options: [string | number, string][];
+  placeholder?: string;
+  disabled?: boolean;
+  name?: string;
+}) {
   return (
     <select className="input" name={name} value={value ?? ''} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
       {placeholder !== undefined && <option value="">{placeholder}</option>}
@@ -124,11 +200,36 @@ export function TextArea({ value, onChange, rows = 3, name }: { value: any; onCh
 }
 
 const BADGE_COLORS: Record<string, string> = {
-  available: 'green', reserved: 'amber', sold: 'navy', delivered: 'gray', preparation: 'blue', maintenance: 'red', returned: 'amber',
-  paid: 'green', overdue: 'red', partially_paid: 'amber', due_today: 'blue', not_due: 'gray', cancelled: 'gray',
-  active: 'green', settled: 'navy', expired: 'gray', converted: 'navy', open: 'blue', valid: 'green', voided: 'red',
-  new: 'blue', contacted: 'navy', interested: 'amber', negotiating: 'amber', won: 'green', lost: 'red',
-  evaluated: 'blue', accepted: 'green', rejected: 'red', used: 'amber',
+  available: 'green',
+  reserved: 'amber',
+  sold: 'navy',
+  delivered: 'gray',
+  preparation: 'blue',
+  maintenance: 'red',
+  returned: 'amber',
+  paid: 'green',
+  overdue: 'red',
+  partially_paid: 'amber',
+  due_today: 'blue',
+  not_due: 'gray',
+  cancelled: 'gray',
+  active: 'green',
+  settled: 'navy',
+  expired: 'gray',
+  converted: 'navy',
+  open: 'blue',
+  valid: 'green',
+  voided: 'red',
+  new: 'blue',
+  contacted: 'navy',
+  interested: 'amber',
+  negotiating: 'amber',
+  won: 'green',
+  lost: 'red',
+  evaluated: 'blue',
+  accepted: 'green',
+  rejected: 'red',
+  used: 'amber',
 };
 
 export function Badge({ group, value, text }: { group?: string; value: string; text?: string }) {
@@ -173,7 +274,15 @@ export function PageHeader({ title, sub, actions, crumb }: { title: ReactNode; s
   );
 }
 
-export function Tabs({ tabs, active, onChange }: { tabs: { key: string; label: string; count?: number; hidden?: boolean }[]; active: string; onChange: (k: string) => void }) {
+export function Tabs({
+  tabs,
+  active,
+  onChange,
+}: {
+  tabs: { key: string; label: string; count?: number; hidden?: boolean }[];
+  active: string;
+  onChange: (k: string) => void;
+}) {
   return (
     <div className="tabs" role="tablist">
       {tabs
@@ -188,7 +297,19 @@ export function Tabs({ tabs, active, onChange }: { tabs: { key: string; label: s
   );
 }
 
-export function Kpi({ label: l, value, sub, tone, onClick }: { label: string; value: ReactNode; sub?: ReactNode; tone?: 'accent' | 'danger'; onClick?: () => void }) {
+export function Kpi({
+  label: l,
+  value,
+  sub,
+  tone,
+  onClick,
+}: {
+  label: string;
+  value: ReactNode;
+  sub?: ReactNode;
+  tone?: 'accent' | 'danger';
+  onClick?: () => void;
+}) {
   return (
     <div className={`card kpi ${tone ?? ''} ${onClick ? 'clickable' : ''}`} onClick={onClick} role={onClick ? 'button' : undefined}>
       <div className="k-label">{l}</div>

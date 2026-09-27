@@ -20,7 +20,17 @@ export const defaultPlan = (start?: string): Plan => ({ plan_type: 'equal', coun
  * Installment plan editor: equal / balloon (server preview) or fully custom lines.
  * Reports validity to the parent: a custom plan is valid only when it sums exactly to `total`.
  */
-export function PlanBuilder({ total, plan, onChange, onValidity }: { total: number; plan: Plan; onChange: (p: Plan) => void; onValidity: (ok: boolean, msg?: string) => void }) {
+export function PlanBuilder({
+  total,
+  plan,
+  onChange,
+  onValidity,
+}: {
+  total: number;
+  plan: Plan;
+  onChange: (p: Plan) => void;
+  onValidity: (ok: boolean, msg?: string) => void;
+}) {
   const [preview, setPreview] = useState<{ due_date: string; amount: number; seq: number }[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const set = (k: keyof Plan, v: any) => onChange({ ...plan, [k]: v });
@@ -64,7 +74,9 @@ export function PlanBuilder({ total, plan, onChange, onValidity }: { total: numb
   }, [total, JSON.stringify(plan)]);
 
   const toCustom = () => {
-    const lines = preview.length ? preview.map((l) => ({ due_date: l.due_date, amount: l.amount })) : [{ due_date: plan.first_due_date ?? addMonthsStr(today(), 1), amount: total }];
+    const lines = preview.length
+      ? preview.map((l) => ({ due_date: l.due_date, amount: l.amount }))
+      : [{ due_date: plan.first_due_date ?? addMonthsStr(today(), 1), amount: total }];
     onChange({ ...plan, plan_type: 'custom', lines });
   };
 
@@ -120,13 +132,38 @@ export function PlanBuilder({ total, plan, onChange, onValidity }: { total: numb
                   <tr key={i}>
                     <td>{i + 1}</td>
                     <td>
-                      <DateInput value={l.due_date} onChange={(v) => set('lines', plan.lines!.map((x, j) => (j === i ? { ...x, due_date: v } : x)))} />
+                      <DateInput
+                        value={l.due_date}
+                        onChange={(v) =>
+                          set(
+                            'lines',
+                            plan.lines!.map((x, j) => (j === i ? { ...x, due_date: v } : x)),
+                          )
+                        }
+                      />
                     </td>
                     <td>
-                      <MoneyInput value={l.amount} onChange={(v) => set('lines', plan.lines!.map((x, j) => (j === i ? { ...x, amount: v } : x)))} />
+                      <MoneyInput
+                        value={l.amount}
+                        onChange={(v) =>
+                          set(
+                            'lines',
+                            plan.lines!.map((x, j) => (j === i ? { ...x, amount: v } : x)),
+                          )
+                        }
+                      />
                     </td>
                     <td>
-                      <button className="btn sm ghost" onClick={() => set('lines', plan.lines!.filter((_, j) => j !== i))} aria-label="حذف القسط">
+                      <button
+                        className="btn sm ghost"
+                        onClick={() =>
+                          set(
+                            'lines',
+                            plan.lines!.filter((_, j) => j !== i),
+                          )
+                        }
+                        aria-label="حذف القسط"
+                      >
                         <Icon name="x" />
                       </button>
                     </td>
@@ -149,13 +186,24 @@ export function PlanBuilder({ total, plan, onChange, onValidity }: { total: numb
               className="btn sm"
               onClick={() => {
                 const last = plan.lines?.[plan.lines.length - 1];
-                set('lines', [...(plan.lines ?? []), { due_date: last ? addMonthsStr(last.due_date, 1) : addMonthsStr(today(), 1), amount: diff > 0 ? diff : null }]);
+                set('lines', [
+                  ...(plan.lines ?? []),
+                  { due_date: last ? addMonthsStr(last.due_date, 1) : addMonthsStr(today(), 1), amount: diff > 0 ? diff : null },
+                ]);
               }}
             >
               <Icon name="plus" /> إضافة قسط
             </button>
             {diff !== 0 && plan.lines?.length ? (
-              <button className="btn sm" onClick={() => set('lines', plan.lines!.map((x, j) => (j === plan.lines!.length - 1 ? { ...x, amount: (x.amount ?? 0) + diff } : x)))}>
+              <button
+                className="btn sm"
+                onClick={() =>
+                  set(
+                    'lines',
+                    plan.lines!.map((x, j) => (j === plan.lines!.length - 1 ? { ...x, amount: (x.amount ?? 0) + diff } : x)),
+                  )
+                }
+              >
                 إضافة الفرق للقسط الأخير
               </button>
             ) : null}

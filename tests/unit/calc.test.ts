@@ -45,12 +45,27 @@ describe('installment schedule calculations', () => {
   });
 
   it('§36 custom schedule not matching the total is BLOCKED', () => {
-    expect(() => customSchedule(M(900000), [{ due_date: '2026-01-01', amount: M(100000) }, { due_date: '2026-02-01', amount: M(50000) }])).toThrowError(/لا يساوي/);
+    expect(() =>
+      customSchedule(M(900000), [
+        { due_date: '2026-01-01', amount: M(100000) },
+        { due_date: '2026-02-01', amount: M(50000) },
+      ]),
+    ).toThrowError(/لا يساوي/);
   });
 
   it('custom schedule allows multiple payments in the same month but not out-of-order dates', () => {
-    expect(customSchedule(M(3000), [{ due_date: '2026-01-05', amount: M(1000) }, { due_date: '2026-01-20', amount: M(2000) }])).toHaveLength(2);
-    expect(() => customSchedule(M(3000), [{ due_date: '2026-02-05', amount: M(1000) }, { due_date: '2026-01-20', amount: M(2000) }])).toThrow();
+    expect(
+      customSchedule(M(3000), [
+        { due_date: '2026-01-05', amount: M(1000) },
+        { due_date: '2026-01-20', amount: M(2000) },
+      ]),
+    ).toHaveLength(2);
+    expect(() =>
+      customSchedule(M(3000), [
+        { due_date: '2026-02-05', amount: M(1000) },
+        { due_date: '2026-01-20', amount: M(2000) },
+      ]),
+    ).toThrow();
   });
 
   it('rejects zero/negative amounts', () => {

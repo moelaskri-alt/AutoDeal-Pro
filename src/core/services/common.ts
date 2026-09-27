@@ -172,9 +172,7 @@ export function paged<T = any>(db: Db, q: QuerySpec, p: ListParams = {}): Paged<
   });
   let totals: Record<string, number> | undefined;
   if (q.totals) {
-    totals = q.groupBy
-      ? db.get(`SELECT ${q.totals} FROM (SELECT ${q.select} ${base})`, q.params)
-      : db.get(`SELECT ${q.totals} ${base}`, q.params);
+    totals = q.groupBy ? db.get(`SELECT ${q.totals} FROM (SELECT ${q.select} ${base})`, q.params) : db.get(`SELECT ${q.totals} ${base}`, q.params);
   }
   return { rows, total: total ?? 0, page, pageSize, totals };
 }

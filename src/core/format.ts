@@ -183,7 +183,19 @@ export function label(group: string, key: string | null | undefined): string {
 /** Status label lookup across groups (used by generic report tables). */
 export function anyLabel(key: string | null | undefined): string {
   if (key === null || key === undefined) return '—';
-  for (const g of ['vehicle_status', 'condition', 'sale_type', 'installment_status', 'contract_status', 'payment_kind', 'pay_method', 'expense_category', 'expense_scope', 'trade_status', 'supplier_type']) {
+  for (const g of [
+    'vehicle_status',
+    'condition',
+    'sale_type',
+    'installment_status',
+    'contract_status',
+    'payment_kind',
+    'pay_method',
+    'expense_category',
+    'expense_scope',
+    'trade_status',
+    'supplier_type',
+  ]) {
     const v = LABELS[g][key];
     if (v) return v;
   }
@@ -192,7 +204,28 @@ export function anyLabel(key: string | null | undefined): string {
 
 // ------------------------------------------------------------ Arabic amount in words (تفقيط)
 
-const ONES = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة', 'عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+const ONES = [
+  '',
+  'واحد',
+  'اثنان',
+  'ثلاثة',
+  'أربعة',
+  'خمسة',
+  'ستة',
+  'سبعة',
+  'ثمانية',
+  'تسعة',
+  'عشرة',
+  'أحد عشر',
+  'اثنا عشر',
+  'ثلاثة عشر',
+  'أربعة عشر',
+  'خمسة عشر',
+  'ستة عشر',
+  'سبعة عشر',
+  'ثمانية عشر',
+  'تسعة عشر',
+];
 const TENS = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
 const HUNDREDS = ['', 'مائة', 'مائتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
 

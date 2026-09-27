@@ -56,11 +56,30 @@ describe('§61 final demo scenario (service level)', () => {
 
     // 1-2 Add used BMW, purchase for 1,200,000
     const p = call('purchases.create', {
-      purchase_date: '2026-01-05', purchase_price: M(1200000), supplier: { name: 'بائع فرد', supplier_type: 'individual' }, status: 'preparation', paid_amount: M(1200000),
-      vehicle: { condition: 'used', brand: 'BMW', model: '520i', model_year: 2020, vin: 'WBAJA5105LBK00001', mileage: 70000, asking_price: M(1450000), min_price: M(1330000) },
+      purchase_date: '2026-01-05',
+      purchase_price: M(1200000),
+      supplier: { name: 'بائع فرد', supplier_type: 'individual' },
+      status: 'preparation',
+      paid_amount: M(1200000),
+      vehicle: {
+        condition: 'used',
+        brand: 'BMW',
+        model: '520i',
+        model_year: 2020,
+        vin: 'WBAJA5105LBK00001',
+        mileage: 70000,
+        asking_price: M(1450000),
+        min_price: M(1330000),
+      },
     });
     // 3 Add 63,000 direct costs
-    for (const [category, amount] of [['maintenance', 25000], ['bodywork', 18000], ['tires', 12000], ['transport', 5000], ['detailing', 3000]] as const) {
+    for (const [category, amount] of [
+      ['maintenance', 25000],
+      ['bodywork', 18000],
+      ['tires', 12000],
+      ['transport', 5000],
+      ['detailing', 3000],
+    ] as const) {
       call('costs.create', { vehicle_id: p.vehicle_id, expense_date: '2026-01-06', category, amount: M(amount) });
     }
     call('vehicles.update', { ...db.get('SELECT * FROM vehicles WHERE id = ?', [p.vehicle_id]), status: 'available' });
@@ -68,15 +87,36 @@ describe('§61 final demo scenario (service level)', () => {
     expect(call('costs.card', { vehicle_id: p.vehicle_id }).totals.actual_cost).toBe(M(1263000));
     // 5-7 customer, quotation 1,400,000, reservation
     const c = call('customers.create', { name: 'عميل العرض التجريبي', phone: '01000000001', national_id: '29001011234599' });
-    const q = call('quotations.create', { customer_id: c.id, vehicle_id: p.vehicle_id, asking_price: M(1450000), discount: M(50000), quote_date: '2026-01-10', payment_method: 'installments' });
+    const q = call('quotations.create', {
+      customer_id: c.id,
+      vehicle_id: p.vehicle_id,
+      asking_price: M(1450000),
+      discount: M(50000),
+      quote_date: '2026-01-10',
+      payment_method: 'installments',
+    });
     expect(call('quotations.get', { id: q.id }).final_price).toBe(M(1400000));
     ctx.today = '2026-01-12';
-    const r = call('reservations.create', { customer_id: c.id, vehicle_id: p.vehicle_id, quotation_id: q.id, amount: M(50000), reservation_date: '2026-01-12', expiry_date: '2026-01-20' });
+    const r = call('reservations.create', {
+      customer_id: c.id,
+      vehicle_id: p.vehicle_id,
+      quotation_id: q.id,
+      amount: M(50000),
+      reservation_date: '2026-01-12',
+      expiry_date: '2026-01-20',
+    });
     expect(r.receipt_no).toBeTruthy();
     // 8-11 sell 1,350,000, 350,000 upfront (50,000 deposit + 300,000 down), remaining 1,000,000 over 24 months
     const s = call('sales.create', {
-      customer_id: c.id, vehicle_id: p.vehicle_id, quotation_id: q.id, sale_type: 'installments', sale_date: '2026-01-15', list_price: M(1450000), discount: M(100000),
-      down_payment: M(300000), plan: { plan_type: 'equal', count: 24, first_due_date: '2026-02-15' },
+      customer_id: c.id,
+      vehicle_id: p.vehicle_id,
+      quotation_id: q.id,
+      sale_type: 'installments',
+      sale_date: '2026-01-15',
+      list_price: M(1450000),
+      discount: M(100000),
+      down_payment: M(300000),
+      plan: { plan_type: 'equal', count: 24, first_due_date: '2026-02-15' },
     });
     expect(s.selling_price).toBe(M(1350000));
     expect(s.reservation_credit + s.down_payment).toBe(M(350000));

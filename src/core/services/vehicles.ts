@@ -149,7 +149,14 @@ export function createVehicle(db: Db, ctx: Ctx, input: any) {
         amount: opening_cost,
       });
     }
-    audit(db, ctx, { action: 'create', module: 'vehicles', record_type: 'vehicle', record_id: v.id, label: `${v.stock_no} ${f.brand} ${f.model}`, new: { ...f, asking_price, min_price, opening_cost } });
+    audit(db, ctx, {
+      action: 'create',
+      module: 'vehicles',
+      record_type: 'vehicle',
+      record_id: v.id,
+      label: `${v.stock_no} ${f.brand} ${f.model}`,
+      new: { ...f, asking_price, min_price, opening_cost },
+    });
     return v;
   });
 }
@@ -219,9 +226,11 @@ export function deleteVehicle(db: Db, ctx: Ctx, input: { id: number }) {
   if (!v) fail('NOT_FOUND', 'السيارة غير موجودة.');
   if (db.scalar('SELECT COUNT(*) FROM sales WHERE vehicle_id = ?', [id])) fail('IN_USE', 'لا يمكن حذف السيارة لأنها مرتبطة بعملية بيع.');
   if (db.scalar('SELECT COUNT(*) FROM reservations WHERE vehicle_id = ?', [id])) fail('IN_USE', 'لا يمكن حذف السيارة لأنها مرتبطة بحجز.');
-  if (db.scalar('SELECT COUNT(*) FROM purchases WHERE vehicle_id = ?', [id])) fail('IN_USE', 'لا يمكن حذف السيارة لأنها مرتبطة بفاتورة شراء. يمكنك تغيير حالتها بدلاً من حذفها.');
+  if (db.scalar('SELECT COUNT(*) FROM purchases WHERE vehicle_id = ?', [id]))
+    fail('IN_USE', 'لا يمكن حذف السيارة لأنها مرتبطة بفاتورة شراء. يمكنك تغيير حالتها بدلاً من حذفها.');
   if (db.scalar('SELECT COUNT(*) FROM trade_ins WHERE vehicle_id = ?', [id])) fail('IN_USE', 'لا يمكن حذف السيارة لأنها مستلمة كاستبدال من عميل.');
-  if (db.scalar("SELECT COUNT(*) FROM quotations WHERE vehicle_id = ? AND status = 'open'", [id])) fail('IN_USE', 'لا يمكن حذف السيارة لوجود عرض سعر مفتوح عليها.');
+  if (db.scalar("SELECT COUNT(*) FROM quotations WHERE vehicle_id = ? AND status = 'open'", [id]))
+    fail('IN_USE', 'لا يمكن حذف السيارة لوجود عرض سعر مفتوح عليها.');
   return db.tx(() => {
     db.run('UPDATE vehicles SET deleted_at = ? WHERE id = ?', [localDateTime(), id]);
     db.run('UPDATE vehicle_expenses SET deleted_at = ? WHERE vehicle_id = ? AND deleted_at IS NULL', [localDateTime(), id]);
@@ -260,7 +269,9 @@ export function listVehicles(db: Db, ctx: Ctx, p: ListParams = {}) {
       mileage: 'v.mileage',
     },
     defaultSort: 'v.id DESC',
-    totals: showCost ? 'COUNT(*) AS count, SUM(c.actual_cost) AS actual_cost, SUM(v.asking_price) AS asking_price' : 'COUNT(*) AS count, SUM(v.asking_price) AS asking_price',
+    totals: showCost
+      ? 'COUNT(*) AS count, SUM(c.actual_cost) AS actual_cost, SUM(v.asking_price) AS asking_price'
+      : 'COUNT(*) AS count, SUM(v.asking_price) AS asking_price',
   };
   addSearch(q, p.search, ['v.stock_no', 'v.vin', 'v.brand', 'v.model', 'v.plate_no', 'v.color', 'v.engine_no']);
   if (f.status === 'in_stock') q.where.push(`v.status IN ('available','reserved','preparation','maintenance','returned')`);
@@ -269,7 +280,9 @@ export function listVehicles(db: Db, ctx: Ctx, p: ListParams = {}) {
   addEq(q, 'v.brand', 'brand', f.brand);
   addDateRange(q, 'v.acquisition_date', f.from, f.to);
   if (f.min_days) {
-    q.where.push(`julianday(:today) - julianday(v.acquisition_date) >= :min_days AND v.status IN ('available','reserved','preparation','maintenance','returned')`);
+    q.where.push(
+      `julianday(:today) - julianday(v.acquisition_date) >= :min_days AND v.status IN ('available','reserved','preparation','maintenance','returned')`,
+    );
     q.params.min_days = Number(f.min_days);
   }
   if (f.sellable) {
@@ -307,11 +320,11 @@ export function getVehicle(db: Db, ctx: Ctx, input: { id: number }) {
       }
     : null;
   const images = db.all('SELECT id, mime, is_primary, created_at FROM vehicle_images WHERE vehicle_id = ? ORDER BY is_primary DESC, id', [id]);
-  const purchase = db.get<any>(
-    `SELECT p.*, s.name AS supplier_name FROM purchases p JOIN suppliers s ON s.id = p.supplier_id WHERE p.vehicle_id = ?`,
+  const purchase = db.get<any>(`SELECT p.*, s.name AS supplier_name FROM purchases p JOIN suppliers s ON s.id = p.supplier_id WHERE p.vehicle_id = ?`, [id]);
+  const tradeIn = db.get<any>(
+    `SELECT t.id, t.trade_no, t.trade_in_value, c.name AS customer_name FROM trade_ins t JOIN customers c ON c.id = t.customer_id WHERE t.vehicle_id = ?`,
     [id],
   );
-  const tradeIn = db.get<any>(`SELECT t.id, t.trade_no, t.trade_in_value, c.name AS customer_name FROM trade_ins t JOIN customers c ON c.id = t.customer_id WHERE t.vehicle_id = ?`, [id]);
   const quotations = db.all(
     `SELECT q.id, q.quote_no, q.quote_date, q.final_price, q.status, c.name AS customer_name FROM quotations q JOIN customers c ON c.id = q.customer_id WHERE q.vehicle_id = ? ORDER BY q.id DESC`,
     [id],
@@ -325,7 +338,16 @@ export function getVehicle(db: Db, ctx: Ctx, input: { id: number }) {
      FROM sales s JOIN customers c ON c.id = s.customer_id LEFT JOIN users u ON u.id = s.salesperson_id WHERE s.vehicle_id = ? ORDER BY s.id DESC`,
     [id],
   );
-  return { vehicle: v, pricing, images, purchase: showCost ? purchase : purchase ? { ...purchase, purchase_price: null } : null, tradeIn, quotations, reservations, sales };
+  return {
+    vehicle: v,
+    pricing,
+    images,
+    purchase: showCost ? purchase : purchase ? { ...purchase, purchase_price: null } : null,
+    tradeIn,
+    quotations,
+    reservations,
+    sales,
+  };
 }
 
 // ------------------------------------------------------------------ images
@@ -343,7 +365,12 @@ export function addImage(db: Db, ctx: Ctx, input: { vehicle_id: number; mime: st
   if (db.scalar<number>('SELECT COUNT(*) FROM vehicle_images WHERE vehicle_id = ?', [vehicle_id]) >= 20) fail('VALIDATION', 'الحد الأقصى 20 صورة لكل سيارة.');
   return db.tx(() => {
     const hasPrimary = db.scalar<number>('SELECT COUNT(*) FROM vehicle_images WHERE vehicle_id = ? AND is_primary = 1', [vehicle_id]);
-    const id = db.run('INSERT INTO vehicle_images(vehicle_id, mime, data, is_primary) VALUES (?,?,?,?)', [vehicle_id, mime, new Uint8Array(data), hasPrimary ? 0 : 1]).lastId;
+    const id = db.run('INSERT INTO vehicle_images(vehicle_id, mime, data, is_primary) VALUES (?,?,?,?)', [
+      vehicle_id,
+      mime,
+      new Uint8Array(data),
+      hasPrimary ? 0 : 1,
+    ]).lastId;
     audit(db, ctx, { action: 'add_image', module: 'vehicles', record_type: 'vehicle', record_id: vehicle_id });
     return { id };
   });

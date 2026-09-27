@@ -190,8 +190,16 @@ export function customerStatement(db: Db, ctx: Ctx, input: { id: number; from?: 
     `SELECT s.*, v.brand, v.model, v.model_year, v.stock_no FROM sales s JOIN vehicles v ON v.id = s.vehicle_id WHERE s.customer_id = ? AND s.status = 'active'`,
     [id],
   )) {
-    rows.push({ date: s.sale_date, ref: s.sale_no, description: `بيع سيارة ${s.brand} ${s.model} ${s.model_year} (${s.stock_no})`, debit: s.total_contract_value, credit: 0, order: 1 });
-    if (s.trade_in_value > 0) rows.push({ date: s.sale_date, ref: s.sale_no, description: 'قيمة سيارة الاستبدال', debit: 0, credit: s.trade_in_value, order: 2 });
+    rows.push({
+      date: s.sale_date,
+      ref: s.sale_no,
+      description: `بيع سيارة ${s.brand} ${s.model} ${s.model_year} (${s.stock_no})`,
+      debit: s.total_contract_value,
+      credit: 0,
+      order: 1,
+    });
+    if (s.trade_in_value > 0)
+      rows.push({ date: s.sale_date, ref: s.sale_no, description: 'قيمة سيارة الاستبدال', debit: 0, credit: s.trade_in_value, order: 2 });
   }
   for (const p of db.all<any>(
     `SELECT p.* FROM payments p LEFT JOIN sales s ON s.id = p.sale_id WHERE p.customer_id = ? AND p.status = 'valid' AND (p.sale_id IS NULL OR s.status = 'active')`,
@@ -279,7 +287,10 @@ export function getLead(db: Db, ctx: Ctx, input: { id: number }) {
     [id],
   );
   if (!lead) fail('NOT_FOUND', 'العميل المحتمل غير موجود.');
-  const followUps = db.all(`SELECT f.*, u.full_name AS user_name FROM follow_ups f LEFT JOIN users u ON u.id = f.created_by WHERE f.lead_id = ? ORDER BY f.follow_date DESC, f.id DESC`, [id]);
+  const followUps = db.all(
+    `SELECT f.*, u.full_name AS user_name FROM follow_ups f LEFT JOIN users u ON u.id = f.created_by WHERE f.lead_id = ? ORDER BY f.follow_date DESC, f.id DESC`,
+    [id],
+  );
   return { lead, followUps };
 }
 

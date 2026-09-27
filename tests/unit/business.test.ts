@@ -82,7 +82,14 @@ describe('§35 installment sale + partial payment', () => {
     expect(k2.contract.remaining).toBe(M(850000));
 
     // full payment of the rest of installment 1 → PAID
-    call('payments.create', { contract_id: sale.contract_id, amount: M(25000), pay_date: '2026-06-12', method: 'cash', mode: 'manual', installment_ids: [first.id] });
+    call('payments.create', {
+      contract_id: sale.contract_id,
+      amount: M(25000),
+      pay_date: '2026-06-12',
+      method: 'cash',
+      mode: 'manual',
+      installment_ids: [first.id],
+    });
     const k3 = call('installments.contract', { id: sale.contract_id });
     expect(k3.schedule[0].status).toBe('paid');
     expect(k3.contract.remaining).toBe(M(825000));
@@ -101,11 +108,28 @@ describe('§35 installment sale + partial payment', () => {
     const call = api(db, ctx);
     const v = purchaseVehicle(db, ctx, { price: M(100000) });
     const c = newCustomer(db, ctx);
-    const sale = call('sales.create', { customer_id: c.id, vehicle_id: v.vehicle_id, sale_type: 'installments', list_price: M(120000), down_payment: M(20000), sale_date: '2026-06-01', plan: { plan_type: 'equal', count: 4, first_due_date: '2026-07-01' } });
+    const sale = call('sales.create', {
+      customer_id: c.id,
+      vehicle_id: v.vehicle_id,
+      sale_type: 'installments',
+      list_price: M(120000),
+      down_payment: M(20000),
+      sale_date: '2026-06-01',
+      plan: { plan_type: 'equal', count: 4, first_due_date: '2026-07-01' },
+    });
     const k = call('installments.contract', { id: sale.contract_id });
     const second = k.schedule[1];
-    expect(() => call('payments.create', { contract_id: sale.contract_id, amount: M(30000), mode: 'manual', installment_ids: [second.id], pay_date: '2026-06-15' })).toThrowError(/أكبر من المتبقي/);
-    const r = call('payments.create', { contract_id: sale.contract_id, amount: M(30000), mode: 'manual', installment_ids: [second.id], allow_spillover: true, pay_date: '2026-06-15' });
+    expect(() =>
+      call('payments.create', { contract_id: sale.contract_id, amount: M(30000), mode: 'manual', installment_ids: [second.id], pay_date: '2026-06-15' }),
+    ).toThrowError(/أكبر من المتبقي/);
+    const r = call('payments.create', {
+      contract_id: sale.contract_id,
+      amount: M(30000),
+      mode: 'manual',
+      installment_ids: [second.id],
+      allow_spillover: true,
+      pay_date: '2026-06-15',
+    });
     expect(r.allocations[0]).toEqual({ installment_id: second.id, amount: M(25000) });
     expect(r.allocations[1].amount).toBe(M(5000));
     // Overpaying the whole contract is always blocked
@@ -120,7 +144,14 @@ describe('§36 custom installments', () => {
     const call = api(db, ctx);
     const v = purchaseVehicle(db, ctx, { price: M(1000000) });
     const c = newCustomer(db, ctx);
-    const base = { customer_id: c.id, vehicle_id: v.vehicle_id, sale_type: 'installments', list_price: M(1200000), down_payment: M(300000), sale_date: '2026-06-01' };
+    const base = {
+      customer_id: c.id,
+      vehicle_id: v.vehicle_id,
+      sale_type: 'installments',
+      list_price: M(1200000),
+      down_payment: M(300000),
+      sale_date: '2026-06-01',
+    };
     const bad = [100000, 50000, 100000, 150000, 200000, 200000].map((a, i) => ({ due_date: `2026-${String(7 + i).padStart(2, '0')}-01`, amount: M(a) }));
     expect(() => call('sales.create', { ...base, plan: { plan_type: 'custom', lines: bad } })).toThrowError(/لا يساوي/);
     expect(db.scalar('SELECT COUNT(*) FROM sales')).toBe(0);
@@ -141,7 +172,15 @@ describe('§37 overdue', () => {
     const call = api(db, ctx);
     const v = purchaseVehicle(db, ctx, { price: M(100000) });
     const c = newCustomer(db, ctx);
-    const sale = call('sales.create', { customer_id: c.id, vehicle_id: v.vehicle_id, sale_type: 'installments', list_price: M(130000), down_payment: M(10000), sale_date: '2026-06-01', plan: { plan_type: 'equal', count: 12, first_due_date: '2026-07-01' } });
+    const sale = call('sales.create', {
+      customer_id: c.id,
+      vehicle_id: v.vehicle_id,
+      sale_type: 'installments',
+      list_price: M(130000),
+      down_payment: M(10000),
+      sale_date: '2026-06-01',
+      plan: { plan_type: 'equal', count: 12, first_due_date: '2026-07-01' },
+    });
     call('payments.create', { contract_id: sale.contract_id, amount: M(10000), pay_date: '2026-07-01' }); // pays #1 fully
     call('payments.create', { contract_id: sale.contract_id, amount: M(4000), pay_date: '2026-08-01' }); // partial #2
     const k = call('installments.contract', { id: sale.contract_id });
@@ -172,7 +211,10 @@ describe('§28 validation rules', () => {
     expect(() => call('reservations.create', { customer_id: c.id, vehicle_id: v.vehicle_id, amount: M(1000) })).toThrowError(/مباعة/);
     // DB-level trigger even if the service is bypassed
     expect(() =>
-      db.run(`INSERT INTO reservations(reservation_no, customer_id, vehicle_id, reservation_date, expiry_date) VALUES ('X', ?, ?, '2026-06-01', '2026-06-05')`, [c.id, v.vehicle_id]),
+      db.run(
+        `INSERT INTO reservations(reservation_no, customer_id, vehicle_id, reservation_date, expiry_date) VALUES ('X', ?, ?, '2026-06-01', '2026-06-05')`,
+        [c.id, v.vehicle_id],
+      ),
     ).toThrow(/VEHICLE_ALREADY_SOLD/);
   });
 
@@ -182,7 +224,9 @@ describe('§28 validation rules', () => {
     const call = api(db, ctx);
     call('vehicles.create', { condition: 'new', brand: 'Kia', model: 'Sportage', model_year: 2025, vin: 'ABC123456789', engine_no: 'ENG1' });
     expect(() => call('vehicles.create', { condition: 'new', brand: 'Kia', model: 'Sportage', model_year: 2025, vin: 'abc123456789' })).toThrowError(/VIN/);
-    expect(() => call('vehicles.create', { condition: 'new', brand: 'Kia', model: 'Sportage', model_year: 2025, vin: 'XYZ99999999', engine_no: 'eng1' })).toThrowError(/المحرك/);
+    expect(() =>
+      call('vehicles.create', { condition: 'new', brand: 'Kia', model: 'Sportage', model_year: 2025, vin: 'XYZ99999999', engine_no: 'eng1' }),
+    ).toThrowError(/المحرك/);
   });
 
   it('negative / zero amounts rejected', () => {
@@ -216,7 +260,15 @@ describe('§28 validation rules', () => {
     const call = api(db, ctx);
     const v = purchaseVehicle(db, ctx, { price: M(100000) });
     const c = newCustomer(db, ctx);
-    const sale = call('sales.create', { customer_id: c.id, vehicle_id: v.vehicle_id, sale_type: 'installments', list_price: M(120000), down_payment: M(20000), sale_date: '2026-06-01', plan: { plan_type: 'equal', count: 4, first_due_date: '2026-07-01' } });
+    const sale = call('sales.create', {
+      customer_id: c.id,
+      vehicle_id: v.vehicle_id,
+      sale_type: 'installments',
+      list_price: M(120000),
+      down_payment: M(20000),
+      sale_date: '2026-06-01',
+      plan: { plan_type: 'equal', count: 4, first_due_date: '2026-07-01' },
+    });
     expect(() => call('customers.delete', { id: c.id })).toThrowError(/معاملات/);
     call('payments.create', { contract_id: sale.contract_id, amount: M(1000), pay_date: '2026-06-10' });
     expect(() => call('sales.cancel', { id: sale.id, reason: 'x' })).toThrowError(/أقساط محصلة/);
@@ -232,10 +284,18 @@ describe('§28 validation rules', () => {
     const v = purchaseVehicle(db, ctx, { price: M(100000), asking: M(130000) });
     const a = newCustomer(db, ctx, 'أ');
     const b = newCustomer(db, ctx, 'ب');
-    const r = call('reservations.create', { customer_id: a.id, vehicle_id: v.vehicle_id, amount: M(5000), reservation_date: '2026-06-01', expiry_date: '2026-06-30' });
+    const r = call('reservations.create', {
+      customer_id: a.id,
+      vehicle_id: v.vehicle_id,
+      amount: M(5000),
+      reservation_date: '2026-06-01',
+      expiry_date: '2026-06-30',
+    });
     expect(call('vehicles.get', { id: v.vehicle_id }).vehicle.status).toBe('reserved');
     expect(() => call('reservations.create', { customer_id: b.id, vehicle_id: v.vehicle_id })).toThrowError(/محجوزة/);
-    expect(() => call('sales.create', { customer_id: b.id, vehicle_id: v.vehicle_id, sale_type: 'cash', list_price: M(130000) })).toThrowError(/محجوزة لعميل آخر/);
+    expect(() => call('sales.create', { customer_id: b.id, vehicle_id: v.vehicle_id, sale_type: 'cash', list_price: M(130000) })).toThrowError(
+      /محجوزة لعميل آخر/,
+    );
     const s = call('sales.create', { customer_id: a.id, vehicle_id: v.vehicle_id, sale_type: 'cash', list_price: M(130000), sale_date: '2026-06-05' });
     expect(s.reservation_credit).toBe(M(5000));
     expect(s.down_payment).toBe(M(125000));
@@ -250,8 +310,20 @@ describe('§28 validation rules', () => {
     const v = purchaseVehicle(db, ctx, { price: M(100000), asking: M(130000) });
     const v2 = purchaseVehicle(db, ctx, { price: M(100000), asking: M(130000) });
     const a = newCustomer(db, ctx);
-    const r = call('reservations.create', { customer_id: a.id, vehicle_id: v.vehicle_id, amount: M(2000), reservation_date: '2026-06-01', expiry_date: '2026-06-03' });
-    const r2 = call('reservations.create', { customer_id: a.id, vehicle_id: v2.vehicle_id, amount: M(3000), reservation_date: '2026-06-01', expiry_date: '2026-06-30' });
+    const r = call('reservations.create', {
+      customer_id: a.id,
+      vehicle_id: v.vehicle_id,
+      amount: M(2000),
+      reservation_date: '2026-06-01',
+      expiry_date: '2026-06-03',
+    });
+    const r2 = call('reservations.create', {
+      customer_id: a.id,
+      vehicle_id: v2.vehicle_id,
+      amount: M(3000),
+      reservation_date: '2026-06-01',
+      expiry_date: '2026-06-30',
+    });
     ctx.today = '2026-06-10';
     call('reservations.list', {});
     expect(call('reservations.get', { id: r.id }).status).toBe('expired');
@@ -272,15 +344,29 @@ describe('§21 trade-in', () => {
     const v = purchaseVehicle(db, ctx, { price: M(800000), asking: M(1000000) });
     const c = newCustomer(db, ctx);
     const t = call('tradeins.create', {
-      customer_id: c.id, brand: 'Hyundai', model: 'Elantra', model_year: 2018, vin: 'TRADEIN0000001', mileage: 90000,
-      market_value: M(350000), trade_in_value: M(300000), expected_prep_cost: M(20000), expected_selling_price: M(360000),
+      customer_id: c.id,
+      brand: 'Hyundai',
+      model: 'Elantra',
+      model_year: 2018,
+      vin: 'TRADEIN0000001',
+      mileage: 90000,
+      market_value: M(350000),
+      trade_in_value: M(300000),
+      expected_prep_cost: M(20000),
+      expected_selling_price: M(360000),
     });
     const ti = call('tradeins.get', { id: t.id });
     expect(ti.expected_total_cost).toBe(M(320000));
     expect(ti.expected_profit).toBe(M(40000));
     const s = call('sales.create', {
-      customer_id: c.id, vehicle_id: v.vehicle_id, sale_type: 'trade_in_installments', list_price: M(1000000), trade_in_id: t.id,
-      down_payment: M(100000), sale_date: '2026-06-01', plan: { plan_type: 'balloon', count: 12, regular_amount: M(40000), first_due_date: '2026-07-01' },
+      customer_id: c.id,
+      vehicle_id: v.vehicle_id,
+      sale_type: 'trade_in_installments',
+      list_price: M(1000000),
+      trade_in_id: t.id,
+      down_payment: M(100000),
+      sale_date: '2026-06-01',
+      plan: { plan_type: 'balloon', count: 12, regular_amount: M(40000), first_due_date: '2026-07-01' },
     });
     expect(s.trade_in_value).toBe(M(300000));
     expect(s.financed_amount).toBe(M(600000));
@@ -308,7 +394,11 @@ describe('§21 trade-in', () => {
     const v = purchaseVehicle(db, ctx, { price: M(500000) });
     const c = newCustomer(db, ctx);
     const s = call('sales.create', {
-      customer_id: c.id, vehicle_id: v.vehicle_id, sale_type: 'trade_in_cash', list_price: M(600000), sale_date: '2026-06-01',
+      customer_id: c.id,
+      vehicle_id: v.vehicle_id,
+      sale_type: 'trade_in_cash',
+      list_price: M(600000),
+      sale_date: '2026-06-01',
       trade_in: { brand: 'Toyota', model: 'Corolla', model_year: 2015, trade_in_value: M(200000), expected_selling_price: M(240000) },
     });
     expect(s.down_payment).toBe(M(400000));
@@ -324,7 +414,15 @@ describe('§17 reschedule, early settlement, void, cancel', () => {
     const call = api(db, ctx);
     const v = purchaseVehicle(db, ctx, { price: M(100000) });
     const c = newCustomer(db, ctx);
-    const sale = call('sales.create', { customer_id: c.id, vehicle_id: v.vehicle_id, sale_type: 'installments', list_price: M(130000), down_payment: M(10000), sale_date: '2026-06-01', plan: { plan_type: 'equal', count: 12, first_due_date: '2026-07-01' } });
+    const sale = call('sales.create', {
+      customer_id: c.id,
+      vehicle_id: v.vehicle_id,
+      sale_type: 'installments',
+      list_price: M(130000),
+      down_payment: M(10000),
+      sale_date: '2026-06-01',
+      plan: { plan_type: 'equal', count: 12, first_due_date: '2026-07-01' },
+    });
     return { db, ctx, call, sale, c, v };
   }
 
@@ -333,7 +431,11 @@ describe('§17 reschedule, early settlement, void, cancel', () => {
     call('payments.create', { contract_id: sale.contract_id, amount: M(15000), pay_date: '2026-06-10' }); // #1 paid, #2 partial 5,000
     const before = call('installments.contract', { id: sale.contract_id }).contract.remaining;
     expect(before).toBe(M(105000));
-    const r = call('installments.reschedule', { contract_id: sale.contract_id, reason: 'ظروف العميل', plan: { plan_type: 'equal', count: 6, first_due_date: '2026-08-01' } });
+    const r = call('installments.reschedule', {
+      contract_id: sale.contract_id,
+      reason: 'ظروف العميل',
+      plan: { plan_type: 'equal', count: 6, first_due_date: '2026-08-01' },
+    });
     expect(r.outstanding).toBe(M(105000));
     const k = call('installments.contract', { id: sale.contract_id });
     expect(k.contract.remaining).toBe(M(105000));

@@ -32,11 +32,27 @@ export function LoginPage() {
         {error && <div className="alert error">{error}</div>}
         <div className="field">
           <label htmlFor="username">اسم المستخدم</label>
-          <input id="username" name="username" className="input ltr" autoFocus value={username} onChange={(e) => setU(e.target.value)} autoComplete="username" />
+          <input
+            id="username"
+            name="username"
+            className="input ltr"
+            autoFocus
+            value={username}
+            onChange={(e) => setU(e.target.value)}
+            autoComplete="username"
+          />
         </div>
         <div className="field">
           <label htmlFor="password">كلمة المرور</label>
-          <input id="password" name="password" className="input ltr" type="password" value={password} onChange={(e) => setP(e.target.value)} autoComplete="current-password" />
+          <input
+            id="password"
+            name="password"
+            className="input ltr"
+            type="password"
+            value={password}
+            onChange={(e) => setP(e.target.value)}
+            autoComplete="current-password"
+          />
         </div>
         <button className="btn primary" type="submit" disabled={busy || !username || !password}>
           {busy ? 'جاري الدخول...' : 'تسجيل الدخول'}

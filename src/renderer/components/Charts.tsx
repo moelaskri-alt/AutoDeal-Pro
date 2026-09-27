@@ -82,7 +82,15 @@ export function BarChart({ labels, series, height = 220 }: { labels: string[]; s
 }
 
 /** Horizontal bars with labels (inventory by brand, aging buckets). */
-export function HBars({ items, color = 'var(--primary)', format }: { items: { label: string; value: number; sub?: string }[]; color?: string; format?: (v: number) => string }) {
+export function HBars({
+  items,
+  color = 'var(--primary)',
+  format,
+}: {
+  items: { label: string; value: number; sub?: string }[];
+  color?: string;
+  format?: (v: number) => string;
+}) {
   const max = Math.max(1, ...items.map((i) => i.value));
   if (!items.length) return <div className="muted small">لا توجد بيانات</div>;
   return (

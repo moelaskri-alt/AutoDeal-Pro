@@ -28,7 +28,14 @@ export function getSettings(db: Db, _ctx: Ctx) {
   return allSettings(db);
 }
 
-const NUMERIC = ['aging_threshold_days', 'reservation_default_days', 'quotation_validity_days', 'installment_rounding', 'auto_backup_keep', 'auto_backup_interval_hours'];
+const NUMERIC = [
+  'aging_threshold_days',
+  'reservation_default_days',
+  'quotation_validity_days',
+  'installment_rounding',
+  'auto_backup_keep',
+  'auto_backup_interval_hours',
+];
 
 export function saveSettings(db: Db, ctx: Ctx, input: Record<string, string>) {
   requirePerm(ctx, 'settings.manage');
@@ -48,7 +55,14 @@ export function saveSettings(db: Db, ctx: Ctx, input: Record<string, string>) {
   }
   db.tx(() => {
     for (const [k, c] of Object.entries(changes)) setSetting(db, k, c.new);
-    if (Object.keys(changes).length) audit(db, ctx, { action: 'update', module: 'settings', record_type: 'settings', old: Object.fromEntries(Object.entries(changes).map(([k, c]) => [k, c.old])), new: Object.fromEntries(Object.entries(changes).map(([k, c]) => [k, c.new])) });
+    if (Object.keys(changes).length)
+      audit(db, ctx, {
+        action: 'update',
+        module: 'settings',
+        record_type: 'settings',
+        old: Object.fromEntries(Object.entries(changes).map(([k, c]) => [k, c.old])),
+        new: Object.fromEntries(Object.entries(changes).map(([k, c]) => [k, c.new])),
+      });
   });
   return allSettings(db);
 }

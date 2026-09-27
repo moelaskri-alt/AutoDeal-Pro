@@ -30,10 +30,26 @@ export function userCtx(db: Db, role: string, today = '2026-06-15'): Ctx {
   return ctx;
 }
 
-export const api = (db: Db, ctx: Ctx) => (method: string, args: any = {}) => callApi(db, ctx, method, args) as any;
+export const api =
+  (db: Db, ctx: Ctx) =>
+  (method: string, args: any = {}) =>
+    callApi(db, ctx, method, args) as any;
 
 let vinCounter = 0;
-export function purchaseVehicle(db: Db, ctx: Ctx, opts: { price: number; brand?: string; model?: string; condition?: 'new' | 'used'; date?: string; asking?: number; min?: number; costs?: { category: string; amount: number }[] }) {
+export function purchaseVehicle(
+  db: Db,
+  ctx: Ctx,
+  opts: {
+    price: number;
+    brand?: string;
+    model?: string;
+    condition?: 'new' | 'used';
+    date?: string;
+    asking?: number;
+    min?: number;
+    costs?: { category: string; amount: number }[];
+  },
+) {
   const call = api(db, ctx);
   vinCounter++;
   return call('purchases.create', {

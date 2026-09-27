@@ -70,7 +70,7 @@ export function getDashboard(db: Db, ctx: Ctx) {
   );
   const buckets = ['0-30', '31-60', '61-90', '91-120', '120+'].map((b) => {
     const r = agingRows.find((x) => x.bucket === b);
-    return { bucket: b, count: r?.count ?? 0, value: fin ? r?.value ?? 0 : null };
+    return { bucket: b, count: r?.count ?? 0, value: fin ? (r?.value ?? 0) : null };
   });
   const threshold = getSettingNum(db, 'aging_threshold_days');
   const staleCount = db.scalar<number>(
@@ -104,16 +104,18 @@ export function getDashboard(db: Db, ctx: Ctx) {
       month: m,
       count: s?.count ?? 0,
       revenue: s?.revenue ?? 0,
-      profit: fin ? s?.profit ?? 0 : null,
+      profit: fin ? (s?.profit ?? 0) : null,
       collected: c?.collected ?? 0,
       installments_due: d?.due ?? 0,
       installments_paid: d?.paid ?? 0,
     };
   });
-  const byBrand = db.all<any>(
-    `SELECT v.brand, COUNT(*) AS count, SUM(c.actual_cost) AS value FROM vehicles v JOIN v_vehicle_cost c ON c.vehicle_id = v.id
+  const byBrand = db
+    .all<any>(
+      `SELECT v.brand, COUNT(*) AS count, SUM(c.actual_cost) AS value FROM vehicles v JOIN v_vehicle_cost c ON c.vehicle_id = v.id
      WHERE v.deleted_at IS NULL AND v.status IN ${IN_STOCK} GROUP BY v.brand ORDER BY count DESC, v.brand LIMIT 10`,
-  ).map((r) => ({ ...r, value: fin ? r.value : null }));
+    )
+    .map((r) => ({ ...r, value: fin ? r.value : null }));
 
   const alerts = {
     reservations_expiring: db.all(
@@ -121,7 +123,10 @@ export function getDashboard(db: Db, ctx: Ctx) {
        WHERE r.status = 'active' AND r.expiry_date <= :d3 ORDER BY r.expiry_date LIMIT 10`,
       { d3: addDays(t, 3) },
     ),
-    follow_ups_due: db.scalar<number>(`SELECT COUNT(*) FROM leads WHERE deleted_at IS NULL AND status NOT IN ('won','lost') AND next_follow_up IS NOT NULL AND next_follow_up <= ?`, [t]),
+    follow_ups_due: db.scalar<number>(
+      `SELECT COUNT(*) FROM leads WHERE deleted_at IS NULL AND status NOT IN ('won','lost') AND next_follow_up IS NOT NULL AND next_follow_up <= ?`,
+      [t],
+    ),
     top_overdue: db.all(
       `SELECT c.id AS customer_id, c.name AS customer_name, c.phone, ic.id AS contract_id, ic.contract_no, SUM(${REM}) AS overdue, MIN(i.due_date) AS oldest_due,
               CAST(julianday(:today) - julianday(MIN(i.due_date)) AS INTEGER) AS days_overdue
@@ -150,13 +155,20 @@ export function getDashboard(db: Db, ctx: Ctx) {
       in_stock: inv.in_stock ?? 0,
       new_in_stock: inv.new_in_stock ?? 0,
       used_in_stock: inv.used_in_stock ?? 0,
-      inventory_cost: fin ? inv.inventory_cost ?? 0 : null,
+      inventory_cost: fin ? (inv.inventory_cost ?? 0) : null,
       inventory_asking: inv.inventory_asking ?? 0,
       stale_count: staleCount,
       aging_threshold: threshold,
     },
     sales: { today: k(todaySales), month: k(monthSales), all: k(allSales) },
-    receivables: { ...rec, due_today_count: rec.due_today_count ?? 0, due_7_count: rec.due_7_count ?? 0, overdue_count: rec.overdue_count ?? 0, collected_month: collectedMonth, collected_today: collectedToday },
+    receivables: {
+      ...rec,
+      due_today_count: rec.due_today_count ?? 0,
+      due_7_count: rec.due_7_count ?? 0,
+      overdue_count: rec.overdue_count ?? 0,
+      collected_month: collectedMonth,
+      collected_today: collectedToday,
+    },
     aging: buckets,
     series,
     byBrand,

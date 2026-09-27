@@ -319,7 +319,11 @@ export const REPORTS: ReportDef[] = [
       { key: 'financed_amount', label: 'المقسط', type: 'money', total: true },
     ],
     run: (db, f) => {
-      const { where, params } = w(f, { date: 's.sale_date', brand: 'v.brand', customer_id: 's.customer_id', salesperson_id: 's.salesperson_id', sale_type: 's.sale_type' }, ["s.status = 'active'"]);
+      const { where, params } = w(
+        f,
+        { date: 's.sale_date', brand: 'v.brand', customer_id: 's.customer_id', salesperson_id: 's.salesperson_id', sale_type: 's.sale_type' },
+        ["s.status = 'active'"],
+      );
       return db.all(
         `SELECT s.sale_date, s.sale_no, c.name AS customer, ${vehLabel} || ' ' || v.model_year AS vehicle, s.sale_type, u.full_name AS salesperson,
                 s.selling_price, s.fees, s.total_contract_value, s.down_payment + s.reservation_credit AS down_payment, s.financed_amount
@@ -434,7 +438,14 @@ export const REPORTS: ReportDef[] = [
     run: (db, f) => {
       const { where, params } = w(
         f,
-        { date: 's.sale_date', brand: 'v.brand', salesperson_id: 's.salesperson_id', customer_id: 's.customer_id', sale_type: 's.sale_type', condition: 'v.condition' },
+        {
+          date: 's.sale_date',
+          brand: 'v.brand',
+          salesperson_id: 's.salesperson_id',
+          customer_id: 's.customer_id',
+          sale_type: 's.sale_type',
+          condition: 'v.condition',
+        },
         ["s.status = 'active'"],
       );
       return withMargin(
@@ -586,7 +597,10 @@ export const REPORTS: ReportDef[] = [
       { key: 'remaining', label: 'المتأخر', type: 'money', total: true },
       { key: 'days_overdue', label: 'أيام التأخير', type: 'int' },
     ],
-    run: (db, f, ctx) => instRows(db, { ...f, from: undefined, to: undefined }, ctx, 'AND i.due_date < :today AND i.amount - i.paid_amount - i.waived_amount > 0').sort((a, b) => b.days_overdue - a.days_overdue),
+    run: (db, f, ctx) =>
+      instRows(db, { ...f, from: undefined, to: undefined }, ctx, 'AND i.due_date < :today AND i.amount - i.paid_amount - i.waived_amount > 0').sort(
+        (a, b) => b.days_overdue - a.days_overdue,
+      ),
   },
   {
     id: 'collection_report',
@@ -636,7 +650,11 @@ export const REPORTS: ReportDef[] = [
       { key: 'total', label: 'إجمالي الرصيد', type: 'money', total: true },
     ],
     run: (db, f, ctx) => {
-      const { where, params } = w(f, { customer_id: 'ic.customer_id', salesperson_id: 's.salesperson_id' }, ["ic.status = 'active'", 'i.is_cancelled = 0', 'i.amount - i.paid_amount - i.waived_amount > 0']);
+      const { where, params } = w(f, { customer_id: 'ic.customer_id', salesperson_id: 's.salesperson_id' }, [
+        "ic.status = 'active'",
+        'i.is_cancelled = 0',
+        'i.amount - i.paid_amount - i.waived_amount > 0',
+      ]);
       return db.all(
         `SELECT c.name AS customer, c.phone,
            SUM(CASE WHEN d <= 0 THEN rem ELSE 0 END) AS not_due,
@@ -699,7 +717,10 @@ export const REPORTS: ReportDef[] = [
     ],
     run: (db, f) => {
       const { where, params } = w(f, { date: 'e.expense_date' }, ['e.deleted_at IS NULL']);
-      return db.all(`SELECT e.category, e.scope, COUNT(*) AS count, SUM(e.amount) AS amount FROM expenses e ${where} GROUP BY e.category, e.scope ORDER BY amount DESC`, params);
+      return db.all(
+        `SELECT e.category, e.scope, COUNT(*) AS count, SUM(e.amount) AS amount FROM expenses e ${where} GROUP BY e.category, e.scope ORDER BY amount DESC`,
+        params,
+      );
     },
   },
   {
@@ -718,7 +739,10 @@ export const REPORTS: ReportDef[] = [
       { key: 'status', label: 'الحالة', type: 'status' },
     ],
     run: (db, f) => {
-      const { where, params } = w(f, { date: 'e.expense_date', brand: 'v.brand', category: 'e.category' }, ['e.deleted_at IS NULL', "e.category NOT IN ('purchase','trade_in')"]);
+      const { where, params } = w(f, { date: 'e.expense_date', brand: 'v.brand', category: 'e.category' }, [
+        'e.deleted_at IS NULL',
+        "e.category NOT IN ('purchase','trade_in')",
+      ]);
       return db.all(
         `SELECT v.stock_no, ${vehLabel} || ' ' || v.model_year AS vehicle, COUNT(*) AS count, SUM(e.amount) AS amount, vc.actual_cost, v.status
          FROM vehicle_expenses e JOIN vehicles v ON v.id = e.vehicle_id JOIN v_vehicle_cost vc ON vc.vehicle_id = v.id ${where}
@@ -749,7 +773,10 @@ export const REPORTS: ReportDef[] = [
          FROM expenses e ${a.where} GROUP BY month`,
         a.params,
       );
-      const v = db.all<any>(`SELECT substr(e.expense_date,1,7) AS month, SUM(e.amount) AS vehicle_direct FROM vehicle_expenses e ${b.where} GROUP BY month`, b.params);
+      const v = db.all<any>(
+        `SELECT substr(e.expense_date,1,7) AS month, SUM(e.amount) AS vehicle_direct FROM vehicle_expenses e ${b.where} GROUP BY month`,
+        b.params,
+      );
       const months = [...new Set([...g.map((x) => x.month), ...v.map((x) => x.month)])].sort();
       return months.map((m) => {
         const x = g.find((r) => r.month === m) ?? { general: 0, sale: 0 };
@@ -796,7 +823,10 @@ export const REPORTS: ReportDef[] = [
 ];
 
 function instRows(db: Db, f: ReportFilters, ctx: Ctx, extra: string) {
-  const { where, params } = w(f, { date: 'i.due_date', customer_id: 'ic.customer_id', salesperson_id: 's.salesperson_id' }, ['i.is_cancelled = 0', "ic.status <> 'cancelled'"]);
+  const { where, params } = w(f, { date: 'i.due_date', customer_id: 'ic.customer_id', salesperson_id: 's.salesperson_id' }, [
+    'i.is_cancelled = 0',
+    "ic.status <> 'cancelled'",
+  ]);
   return db.all<any>(
     `SELECT i.due_date, ic.contract_no, c.name AS customer, c.phone, i.seq, i.amount, i.paid_amount, i.amount - i.paid_amount - i.waived_amount AS remaining,
             ${SQL_INSTALLMENT_STATUS('i')} AS status,
@@ -810,7 +840,15 @@ function instRows(db: Db, f: ReportFilters, ctx: Ctx, extra: string) {
 export function listReports(ctx: Ctx) {
   requirePerm(ctx, 'reports.view');
   const fin = ctx.perms.has('reports.financial');
-  return REPORTS.filter((r) => !r.financial || fin).map(({ id, group, title, description, filters, columns, financial }) => ({ id, group, title, description, filters, columns, financial: !!financial }));
+  return REPORTS.filter((r) => !r.financial || fin).map(({ id, group, title, description, filters, columns, financial }) => ({
+    id,
+    group,
+    title,
+    description,
+    filters,
+    columns,
+    financial: !!financial,
+  }));
 }
 
 export function runReport(db: Db, ctx: Ctx, input: { id: string; filters?: ReportFilters }) {

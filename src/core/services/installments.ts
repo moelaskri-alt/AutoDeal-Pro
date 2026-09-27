@@ -41,7 +41,17 @@ export function insertContract(db: Db, ctx: Ctx, sale: { id: number; customer_id
   const id = db.run(
     `INSERT INTO installment_contracts(contract_no, sale_id, customer_id, financed_amount, plan_type, installments_count, first_due_date, notes, created_by)
      VALUES (?,?,?,?,?,?,?,?,?)`,
-    [contract_no, sale.id, sale.customer_id, financed, plan.plan_type, lines.length, lines[0].due_date, V.str(rawPlan.notes, 'ملاحظات', { max: 1000 }), ctx.user.id || null],
+    [
+      contract_no,
+      sale.id,
+      sale.customer_id,
+      financed,
+      plan.plan_type,
+      lines.length,
+      lines[0].due_date,
+      V.str(rawPlan.notes, 'ملاحظات', { max: 1000 }),
+      ctx.user.id || null,
+    ],
   ).lastId;
   for (const l of lines) {
     db.run('INSERT INTO installments(contract_id, seq, due_date, amount, schedule_version) VALUES (?,?,?,?,1)', [id, l.seq, l.due_date, l.amount]);
@@ -73,7 +83,14 @@ export function listContracts(db: Db, ctx: Ctx, p: ListParams = {}) {
     from: CONTRACT_FROM,
     where: [],
     params: { today: today(ctx) },
-    sortable: { contract_no: 'ic.contract_no', customer_name: 'c.name', remaining: 'remaining', overdue_amount: 'overdue_amount', next_due_date: 'next_due_date', sale_date: 's.sale_date' },
+    sortable: {
+      contract_no: 'ic.contract_no',
+      customer_name: 'c.name',
+      remaining: 'remaining',
+      overdue_amount: 'overdue_amount',
+      next_due_date: 'next_due_date',
+      sale_date: 's.sale_date',
+    },
     defaultSort: 'ic.id DESC',
     totals: 'COUNT(*) AS count, SUM(financed_amount) AS financed_amount, SUM(paid) AS paid, SUM(remaining) AS remaining, SUM(overdue_amount) AS overdue_amount',
     groupBy: 'ic.id',
@@ -83,7 +100,10 @@ export function listContracts(db: Db, ctx: Ctx, p: ListParams = {}) {
   addEq(q, 'ic.customer_id', 'customer_id', f.customer_id);
   addEq(q, 's.salesperson_id', 'salesperson_id', f.salesperson_id);
   addDateRange(q, 's.sale_date', f.from, f.to);
-  if (f.overdue) q.where.push(`EXISTS (SELECT 1 FROM installments i WHERE i.contract_id = ic.id AND i.is_cancelled = 0 AND i.due_date < :today AND i.amount - i.paid_amount - i.waived_amount > 0)`);
+  if (f.overdue)
+    q.where.push(
+      `EXISTS (SELECT 1 FROM installments i WHERE i.contract_id = ic.id AND i.is_cancelled = 0 AND i.due_date < :today AND i.amount - i.paid_amount - i.waived_amount > 0)`,
+    );
   return paged(db, q, p);
 }
 
@@ -91,7 +111,10 @@ export function getContract(db: Db, ctx: Ctx, input: { id: number }) {
   requirePerm(ctx, 'installments.view');
   const id = V.id(input.id, 'العقد');
   const t = today(ctx);
-  const contract = db.get<any>(`SELECT ${CONTRACT_SELECT}, c.national_id, c.address AS customer_address FROM ${CONTRACT_FROM} WHERE ic.id = :id`, { id, today: t });
+  const contract = db.get<any>(`SELECT ${CONTRACT_SELECT}, c.national_id, c.address AS customer_address FROM ${CONTRACT_FROM} WHERE ic.id = :id`, {
+    id,
+    today: t,
+  });
   if (!contract) fail('NOT_FOUND', 'العقد غير موجود.');
   const schedule = db.all(
     `SELECT i.id, i.seq, i.due_date, i.amount, i.paid_amount, i.waived_amount, i.is_cancelled, i.schedule_version, i.paid_at, i.notes,
@@ -172,13 +195,37 @@ export function listInstallments(db: Db, ctx: Ctx, p: ListParams = {}) {
 export function insertPayment(
   db: Db,
   ctx: Ctx,
-  p: { customer_id: number; sale_id?: number | null; contract_id?: number | null; reservation_id?: number | null; kind: string; pay_date: string; amount: number; method: string; reference?: string | null; notes?: string | null },
+  p: {
+    customer_id: number;
+    sale_id?: number | null;
+    contract_id?: number | null;
+    reservation_id?: number | null;
+    kind: string;
+    pay_date: string;
+    amount: number;
+    method: string;
+    reference?: string | null;
+    notes?: string | null;
+  },
 ): { id: number; receipt_no: string } {
   const receipt_no = nextNo(db, 'receipt', p.pay_date);
   const id = db.run(
     `INSERT INTO payments(receipt_no, customer_id, sale_id, contract_id, reservation_id, kind, pay_date, amount, method, reference, notes, created_by)
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [receipt_no, p.customer_id, p.sale_id ?? null, p.contract_id ?? null, p.reservation_id ?? null, p.kind, p.pay_date, p.amount, p.method, p.reference ?? null, p.notes ?? null, ctx.user.id || null],
+    [
+      receipt_no,
+      p.customer_id,
+      p.sale_id ?? null,
+      p.contract_id ?? null,
+      p.reservation_id ?? null,
+      p.kind,
+      p.pay_date,
+      p.amount,
+      p.method,
+      p.reference ?? null,
+      p.notes ?? null,
+      ctx.user.id || null,
+    ],
   ).lastId;
   return { id, receipt_no };
 }
@@ -192,10 +239,9 @@ function openInstallments(db: Db, contractId: number) {
 }
 
 function refreshContractStatus(db: Db, contractId: number, payDate: string) {
-  const rem = db.scalar<number>(
-    'SELECT COALESCE(SUM(amount - paid_amount - waived_amount),0) FROM installments WHERE contract_id = ? AND is_cancelled = 0',
-    [contractId],
-  );
+  const rem = db.scalar<number>('SELECT COALESCE(SUM(amount - paid_amount - waived_amount),0) FROM installments WHERE contract_id = ? AND is_cancelled = 0', [
+    contractId,
+  ]);
   db.run(
     `UPDATE installments SET paid_at = CASE WHEN amount - paid_amount - waived_amount <= 0 THEN COALESCE(paid_at, ?) ELSE NULL END WHERE contract_id = ?`,
     [payDate, contractId],
@@ -260,8 +306,19 @@ export function recordPayment(db: Db, ctx: Ctx, input: any) {
       if (r.unallocated > 0) fail('OVERPAYMENT', 'تعذر توزيع كامل المبلغ على الأقساط.');
       allocations = r.allocations;
     }
-    const pay = insertPayment(db, ctx, { customer_id: contract.customer_id, sale_id: contract.sale_id, contract_id, kind: 'installment', pay_date, amount, method, reference, notes });
-    for (const a of allocations) db.run('INSERT INTO payment_allocations(payment_id, installment_id, amount) VALUES (?,?,?)', [pay.id, a.installment_id, a.amount]);
+    const pay = insertPayment(db, ctx, {
+      customer_id: contract.customer_id,
+      sale_id: contract.sale_id,
+      contract_id,
+      kind: 'installment',
+      pay_date,
+      amount,
+      method,
+      reference,
+      notes,
+    });
+    for (const a of allocations)
+      db.run('INSERT INTO payment_allocations(payment_id, installment_id, amount) VALUES (?,?,?)', [pay.id, a.installment_id, a.amount]);
     const remaining = refreshContractStatus(db, contract_id, pay_date);
     audit(db, ctx, {
       action: 'payment',
@@ -304,9 +361,13 @@ export function earlySettlement(db: Db, ctx: Ctx, input: any) {
       notes: V.str(input.notes, 'ملاحظات', { max: 1000 }) ?? (discount ? `خصم سداد مبكر: ${discount / 100}` : null),
     });
     const { allocations } = allocateFifo(open, amount);
-    for (const a of allocations) db.run('INSERT INTO payment_allocations(payment_id, installment_id, amount) VALUES (?,?,?)', [pay.id, a.installment_id, a.amount]);
+    for (const a of allocations)
+      db.run('INSERT INTO payment_allocations(payment_id, installment_id, amount) VALUES (?,?,?)', [pay.id, a.installment_id, a.amount]);
     if (discount > 0) {
-      db.run('UPDATE installments SET waived_amount = waived_amount + (amount - paid_amount - waived_amount) WHERE contract_id = ? AND is_cancelled = 0 AND amount - paid_amount - waived_amount > 0', [contract_id]);
+      db.run(
+        'UPDATE installments SET waived_amount = waived_amount + (amount - paid_amount - waived_amount) WHERE contract_id = ? AND is_cancelled = 0 AND amount - paid_amount - waived_amount > 0',
+        [contract_id],
+      );
     }
     refreshContractStatus(db, contract_id, pay_date);
     audit(db, ctx, {
@@ -337,7 +398,15 @@ export function voidPayment(db: Db, ctx: Ctx, input: { id: number; reason: strin
     if (p.kind === 'early_settlement') db.run('UPDATE installments SET waived_amount = 0 WHERE contract_id = ?', [p.contract_id]);
     db.run(`UPDATE payments SET status = 'voided', void_reason = ?, voided_at = ? WHERE id = ?`, [reason, localDateTime(), id]);
     refreshContractStatus(db, p.contract_id, p.pay_date);
-    audit(db, ctx, { action: 'void', module: 'payments', record_type: 'payment', record_id: id, label: p.receipt_no, old: { ...p, allocations: allocs }, details: reason });
+    audit(db, ctx, {
+      action: 'void',
+      module: 'payments',
+      record_type: 'payment',
+      record_id: id,
+      label: p.receipt_no,
+      old: { ...p, allocations: allocs },
+      details: reason,
+    });
     return { ok: true };
   });
 }
@@ -385,7 +454,9 @@ export function getPayment(db: Db, ctx: Ctx, input: { id: number }) {
     [id],
   );
   const contractRemaining = payment.contract_id
-    ? db.scalar<number>('SELECT COALESCE(SUM(amount - paid_amount - waived_amount),0) FROM installments WHERE contract_id = ? AND is_cancelled = 0', [payment.contract_id])
+    ? db.scalar<number>('SELECT COALESCE(SUM(amount - paid_amount - waived_amount),0) FROM installments WHERE contract_id = ? AND is_cancelled = 0', [
+        payment.contract_id,
+      ])
     : null;
   return { payment, allocations, contractRemaining };
 }
@@ -414,17 +485,31 @@ export function reschedule(db: Db, ctx: Ctx, input: any) {
     const version = contract.schedule_version + 1;
     for (const i of open) {
       if (i.paid_amount > 0 || i.waived_amount > 0) {
-        db.run(`UPDATE installments SET amount = paid_amount + waived_amount, notes = ? WHERE id = ?`, [`أعيدت جدولة المتبقي (${(i.amount - i.paid_amount - i.waived_amount) / 100}) - إصدار ${version}`, i.id]);
+        db.run(`UPDATE installments SET amount = paid_amount + waived_amount, notes = ? WHERE id = ?`, [
+          `أعيدت جدولة المتبقي (${(i.amount - i.paid_amount - i.waived_amount) / 100}) - إصدار ${version}`,
+          i.id,
+        ]);
       } else {
         db.run('UPDATE installments SET is_cancelled = 1, notes = ? WHERE id = ?', [`ملغي بإعادة الجدولة - إصدار ${version}`, i.id]);
       }
     }
     const maxSeq = db.scalar<number>('SELECT COALESCE(MAX(seq),0) FROM installments WHERE contract_id = ?', [contract_id]);
     lines.forEach((l, idx) => {
-      db.run('INSERT INTO installments(contract_id, seq, due_date, amount, schedule_version) VALUES (?,?,?,?,?)', [contract_id, maxSeq + idx + 1, l.due_date, l.amount, version]);
+      db.run('INSERT INTO installments(contract_id, seq, due_date, amount, schedule_version) VALUES (?,?,?,?,?)', [
+        contract_id,
+        maxSeq + idx + 1,
+        l.due_date,
+        l.amount,
+        version,
+      ]);
     });
     const activeCount = db.scalar<number>('SELECT COUNT(*) FROM installments WHERE contract_id = ? AND is_cancelled = 0', [contract_id]);
-    db.run('UPDATE installment_contracts SET schedule_version = ?, plan_type = ?, installments_count = ? WHERE id = ?', [version, plan.plan_type, activeCount, contract_id]);
+    db.run('UPDATE installment_contracts SET schedule_version = ?, plan_type = ?, installments_count = ? WHERE id = ?', [
+      version,
+      plan.plan_type,
+      activeCount,
+      contract_id,
+    ]);
     const newRemaining = refreshContractStatus(db, contract_id, today(ctx));
     if (newRemaining !== outstanding) throw new AppError('SCHEDULE_TOTAL_MISMATCH', 'الجدول الجديد لا يساوي الرصيد المتبقي.');
     const newSchedule = lines.map((l, idx) => ({ ...l, seq: maxSeq + idx + 1 }));

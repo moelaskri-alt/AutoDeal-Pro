@@ -94,7 +94,14 @@ export function rejectTradeIn(db: Db, ctx: Ctx, input: { id: number; reason?: st
  * Accepts a trade-in as part of a sale: the vehicle is created in inventory (used, under preparation)
  * with the trade-in value as its acquisition cost. Must be called inside the sale transaction.
  */
-export function acceptTradeInForSale(db: Db, ctx: Ctx, tradeInId: number, saleId: number, saleDate: string, customerId: number): { vehicle_id: number; value: number } {
+export function acceptTradeInForSale(
+  db: Db,
+  ctx: Ctx,
+  tradeInId: number,
+  saleId: number,
+  saleDate: string,
+  customerId: number,
+): { vehicle_id: number; value: number } {
   const t = db.get<any>('SELECT * FROM trade_ins WHERE id = ?', [tradeInId]);
   if (!t) fail('NOT_FOUND', 'عملية الاستبدال غير موجودة.');
   if (t.status !== 'evaluated') fail('VALIDATION', 'عملية الاستبدال مستخدمة أو مرفوضة بالفعل.');
@@ -117,7 +124,14 @@ export function acceptTradeInForSale(db: Db, ctx: Ctx, tradeInId: number, saleId
     source_id: t.id,
   });
   db.run(`UPDATE trade_ins SET status = 'accepted', vehicle_id = ?, sale_id = ? WHERE id = ?`, [v.id, saleId, t.id]);
-  audit(db, ctx, { action: 'accept', module: 'tradeins', record_type: 'trade_in', record_id: t.id, label: `${t.trade_no} → ${v.stock_no}`, new: { vehicle_id: v.id, sale_id: saleId } });
+  audit(db, ctx, {
+    action: 'accept',
+    module: 'tradeins',
+    record_type: 'trade_in',
+    record_id: t.id,
+    label: `${t.trade_no} → ${v.stock_no}`,
+    new: { vehicle_id: v.id, sale_id: saleId },
+  });
   return { vehicle_id: v.id, value: t.trade_in_value };
 }
 

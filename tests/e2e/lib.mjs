@@ -22,10 +22,13 @@ export async function launch(dataRoot) {
 }
 
 export async function setSize(app, page, w, h) {
-  await app.evaluate(({ BrowserWindow }, [w, h]) => {
-    const win = BrowserWindow.getAllWindows().find((x) => !x.getTitle().includes('طباعة')) ?? BrowserWindow.getAllWindows()[0];
-    win.setContentSize(w, h);
-  }, [w, h]);
+  await app.evaluate(
+    ({ BrowserWindow }, [w, h]) => {
+      const win = BrowserWindow.getAllWindows().find((x) => !x.getTitle().includes('طباعة')) ?? BrowserWindow.getAllWindows()[0];
+      win.setContentSize(w, h);
+    },
+    [w, h],
+  );
   await page.waitForTimeout(300);
 }
 
@@ -60,15 +63,19 @@ export async function layoutIssues(page) {
     for (const el of document.querySelectorAll(sel)) {
       const r = el.getBoundingClientRect();
       if (!r.width || !r.height) continue;
-      if (el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).overflow !== 'visible') issues.push(`clipped: ${el.tagName}.${el.className} "${el.textContent.trim().slice(0, 40)}"`);
-      if (el.scrollHeight > el.clientHeight + 4 && ['BUTTON', 'TH'].includes(el.tagName) && getComputedStyle(el).whiteSpace === 'nowrap') issues.push(`v-clipped: ${el.tagName} "${el.textContent.trim().slice(0, 40)}"`);
+      if (el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).overflow !== 'visible')
+        issues.push(`clipped: ${el.tagName}.${el.className} "${el.textContent.trim().slice(0, 40)}"`);
+      if (el.scrollHeight > el.clientHeight + 4 && ['BUTTON', 'TH'].includes(el.tagName) && getComputedStyle(el).whiteSpace === 'nowrap')
+        issues.push(`v-clipped: ${el.tagName} "${el.textContent.trim().slice(0, 40)}"`);
     }
     // Overlap check: KPI cards / buttons in the page header must not overlap each other.
     const boxes = [...document.querySelectorAll('.page-header .btn, .kpi')].map((e) => ({ e, r: e.getBoundingClientRect() })).filter((b) => b.r.width);
     for (let i = 0; i < boxes.length; i++)
       for (let j = i + 1; j < boxes.length; j++) {
-        const a = boxes[i].r, b = boxes[j].r;
-        if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) issues.push(`overlap: "${boxes[i].e.textContent.trim().slice(0, 20)}" / "${boxes[j].e.textContent.trim().slice(0, 20)}"`);
+        const a = boxes[i].r,
+          b = boxes[j].r;
+        if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1)
+          issues.push(`overlap: "${boxes[i].e.textContent.trim().slice(0, 20)}" / "${boxes[j].e.textContent.trim().slice(0, 20)}"`);
       }
     return [...new Set(issues)];
   });

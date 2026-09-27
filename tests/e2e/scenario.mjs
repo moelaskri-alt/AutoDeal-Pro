@@ -30,7 +30,11 @@ const daysAgo = (n) => {
 };
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 let page;
-const field = (scope, labelText) => scope.locator('.field').filter({ has: page.locator('label', { hasText: new RegExp('^\\s*' + esc(labelText) + '\\s*\\*?\\s*$') }) }).first();
+const field = (scope, labelText) =>
+  scope
+    .locator('.field')
+    .filter({ has: page.locator('label', { hasText: new RegExp('^\\s*' + esc(labelText) + '\\s*\\*?\\s*$') }) })
+    .first();
 const money = async (loc, v) => {
   await loc.click();
   await loc.fill(String(v));
@@ -74,7 +78,13 @@ try {
 
   await step('3. إضافة تكاليف مباشرة 63,000 (صيانة/سمكرة/إطارات/نقل/تنظيف)', async () => {
     await page.click('.tabs >> text=بطاقة التكلفة');
-    for (const [cat, amt] of [['maintenance', 25000], ['bodywork', 18000], ['tires', 12000], ['transport', 5000], ['detailing', 3000]]) {
+    for (const [cat, amt] of [
+      ['maintenance', 25000],
+      ['bodywork', 18000],
+      ['tires', 12000],
+      ['transport', 5000],
+      ['detailing', 3000],
+    ]) {
       await page.click('text=إضافة تكلفة');
       const m = page.locator('.modal');
       await m.locator('select[name=category]').selectOption(cat);
@@ -225,10 +235,14 @@ try {
   await step('17-18. ربحية السيارة: مجمل الربح = 87,000 وهامش 6.44%', async () => {
     await go(page, '#/reports?id=vehicle_profitability');
     await page.click('.toolbar >> text=كل الفترات');
-    await page.waitForFunction(() => {
-      const t = document.querySelector('.content table.dt tbody')?.textContent ?? '';
-      return t.includes('87,000') && t.includes('1,263,000') && t.includes('6.44%');
-    }, null, { timeout: 8000 });
+    await page.waitForFunction(
+      () => {
+        const t = document.querySelector('.content table.dt tbody')?.textContent ?? '';
+        return t.includes('87,000') && t.includes('1,263,000') && t.includes('6.44%');
+      },
+      null,
+      { timeout: 8000 },
+    );
     await page.click('.card-h >> text=PDF');
     await toast(page, 'تم الحفظ');
     await page.screenshot({ path: path.join(shots, '17-profitability.png') });
@@ -245,7 +259,11 @@ try {
   });
 
   await step('طباعة: فاتورة/عقد/جدول/إيصال PDF', async () => {
-    for (const [type, id] of [['invoice', ids.sale], ['contract', ids.sale], ['schedule', ids.contract]]) {
+    for (const [type, id] of [
+      ['invoice', ids.sale],
+      ['contract', ids.sale],
+      ['schedule', ids.contract],
+    ]) {
       const r = await api(page, 'print.document', { type, id, mode: 'pdf' });
       if (!r.ok || !fs.readFileSync(r.data.file).subarray(0, 4).toString().startsWith('%PDF')) throw new Error('pdf failed for ' + type);
     }
@@ -311,7 +329,9 @@ try {
     await field(m, 'اسم المستخدم (بالإنجليزية)').locator('input').fill('sara');
     await field(m, 'الاسم الكامل').locator('input').fill('سارة المندوبة');
     const roles = (await api(page, 'roles.list')).data.roles;
-    await field(m, 'الدور').locator('select').selectOption(String(roles.find((r) => r.code === 'sales').id));
+    await field(m, 'الدور')
+      .locator('select')
+      .selectOption(String(roles.find((r) => r.code === 'sales').id));
     await field(m, 'كلمة المرور').locator('input').fill('sara123');
     await m.locator('.modal-f >> text=حفظ').click();
     await toast(page, 'تم الحفظ');

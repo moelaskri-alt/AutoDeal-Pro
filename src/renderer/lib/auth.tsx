@@ -17,6 +17,8 @@ interface AuthState {
   login: (u: string, p: string) => Promise<{ must_change_password: boolean }>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  mustChangePassword: boolean;
+  clearMustChange: () => void;
 }
 
 const Ctx = createContext<AuthState>(null as any);
@@ -25,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [perms, setPerms] = useState<Set<string>>(new Set());
   const [ready, setReady] = useState(false);
+  const [mustChangePassword, setMust] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -50,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const r = await call('auth.login', { username, password });
     setUser(r.user);
     setPerms(new Set(r.perms));
+    setMust(!!r.must_change_password);
     return { must_change_password: r.must_change_password };
   };
   const logout = async () => {
@@ -58,7 +62,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPerms(new Set());
   };
   const can = (...p: string[]) => p.every((x) => perms.has(x));
-  return <Ctx.Provider value={{ user, perms, ready, can, login, logout, refresh }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ user, perms, ready, can, login, logout, refresh, mustChangePassword, clearMustChange: () => setMust(false) }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export const useAuth = () => useContext(Ctx);

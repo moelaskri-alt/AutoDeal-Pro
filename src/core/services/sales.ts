@@ -13,10 +13,7 @@ const PAY_METHODS = ['cash', 'bank_transfer', 'cheque', 'card', 'other'] as cons
 export const SALE_TYPES = ['cash', 'installments', 'trade_in_cash', 'trade_in_installments'] as const;
 
 function loadVehicle(db: Db, id: number) {
-  const v = db.get<any>(
-    `SELECT v.*, c.actual_cost FROM vehicles v JOIN v_vehicle_cost c ON c.vehicle_id = v.id WHERE v.id = ? AND v.deleted_at IS NULL`,
-    [id],
-  );
+  const v = db.get<any>(`SELECT v.*, c.actual_cost FROM vehicles v JOIN v_vehicle_cost c ON c.vehicle_id = v.id WHERE v.id = ? AND v.deleted_at IS NULL`, [id]);
   if (!v) fail('NOT_FOUND', 'السيارة غير موجودة.');
   return v;
 }
@@ -34,7 +31,14 @@ export function expireStale(db: Db, ctx: Ctx) {
       for (const r of expired) {
         db.run(`UPDATE reservations SET status = 'expired', updated_at = ? WHERE id = ?`, [localDateTime(), r.id]);
         db.run(`UPDATE vehicles SET status = 'available', updated_at = ? WHERE id = ? AND status = 'reserved'`, [localDateTime(), r.vehicle_id]);
-        audit(db, ctx, { action: 'expire', module: 'reservations', record_type: 'reservation', record_id: r.id, label: r.reservation_no, details: 'انتهاء مدة الحجز تلقائياً' });
+        audit(db, ctx, {
+          action: 'expire',
+          module: 'reservations',
+          record_type: 'reservation',
+          record_id: r.id,
+          label: r.reservation_no,
+          details: 'انتهاء مدة الحجز تلقائياً',
+        });
       }
     });
   }
@@ -64,16 +68,39 @@ export function createQuotation(db: Db, ctx: Ctx, input: any) {
   const months = input.months ? V.int(input.months, 'عدد الشهور', { min: 1, max: 360 }) : null;
   const below_min = v.min_price > 0 && final_price < v.min_price;
   if (below_min && !can(ctx, 'sales.override_min_price')) {
-    throw new AppError('BELOW_MIN_PRICE', 'السعر النهائي أقل من الحد الأدنى المسموح لهذه السيارة. ليس لديك صلاحية تجاوز الحد الأدنى.', { min_price: v.min_price });
+    throw new AppError('BELOW_MIN_PRICE', 'السعر النهائي أقل من الحد الأدنى المسموح لهذه السيارة. ليس لديك صلاحية تجاوز الحد الأدنى.', {
+      min_price: v.min_price,
+    });
   }
   return db.tx(() => {
     const quote_no = nextNo(db, 'quotation', quote_date);
     const id = db.run(
       `INSERT INTO quotations(quote_no, customer_id, vehicle_id, quote_date, asking_price, discount, final_price, payment_method, down_payment, months, valid_until, notes, created_by)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [quote_no, customer_id, vehicle_id, quote_date, asking_price, discount, final_price, payment_method, down_payment, months, valid_until, V.str(input.notes, 'ملاحظات', { max: 2000 }), ctx.user.id || null],
+      [
+        quote_no,
+        customer_id,
+        vehicle_id,
+        quote_date,
+        asking_price,
+        discount,
+        final_price,
+        payment_method,
+        down_payment,
+        months,
+        valid_until,
+        V.str(input.notes, 'ملاحظات', { max: 2000 }),
+        ctx.user.id || null,
+      ],
     ).lastId;
-    audit(db, ctx, { action: below_min ? 'override_min_price' : 'create', module: 'quotations', record_type: 'quotation', record_id: id, label: quote_no, new: { customer_id, vehicle_id, asking_price, discount, final_price, below_min } });
+    audit(db, ctx, {
+      action: below_min ? 'override_min_price' : 'create',
+      module: 'quotations',
+      record_type: 'quotation',
+      record_id: id,
+      label: quote_no,
+      new: { customer_id, vehicle_id, asking_price, discount, final_price, below_min },
+    });
     return { id, quote_no, below_min };
   });
 }
@@ -151,16 +178,46 @@ export function createReservation(db: Db, ctx: Ctx, input: any) {
     const id = db.run(
       `INSERT INTO reservations(reservation_no, customer_id, vehicle_id, quotation_id, reservation_date, amount, agreed_price, expiry_date, notes, created_by)
        VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      [reservation_no, customer_id, vehicle_id, quotation_id, reservation_date, amount, agreed_price, expiry_date, V.str(input.notes, 'ملاحظات', { max: 2000 }), ctx.user.id || null],
+      [
+        reservation_no,
+        customer_id,
+        vehicle_id,
+        quotation_id,
+        reservation_date,
+        amount,
+        agreed_price,
+        expiry_date,
+        V.str(input.notes, 'ملاحظات', { max: 2000 }),
+        ctx.user.id || null,
+      ],
     ).lastId;
     db.run(`UPDATE vehicles SET status = 'reserved', updated_at = ? WHERE id = ?`, [localDateTime(), vehicle_id]);
     let receipt: { id: number; receipt_no: string } | null = null;
     if (amount > 0) {
-      receipt = insertPayment(db, ctx, { customer_id, reservation_id: id, kind: 'reservation', pay_date: reservation_date, amount, method, reference: V.str(input.reference, 'المرجع', { max: 80 }) });
+      receipt = insertPayment(db, ctx, {
+        customer_id,
+        reservation_id: id,
+        kind: 'reservation',
+        pay_date: reservation_date,
+        amount,
+        method,
+        reference: V.str(input.reference, 'المرجع', { max: 80 }),
+      });
     }
     if (quotation_id) db.run(`UPDATE quotations SET status = 'reserved' WHERE id = ? AND status IN ('open','expired')`, [quotation_id]);
-    db.run(`UPDATE leads SET status = 'reserved', updated_at = ? WHERE customer_id = ? AND vehicle_id = ? AND status NOT IN ('won','lost')`, [localDateTime(), customer_id, vehicle_id]);
-    audit(db, ctx, { action: 'create', module: 'reservations', record_type: 'reservation', record_id: id, label: `${reservation_no} / ${v.stock_no}`, new: { customer_id, vehicle_id, amount, expiry_date } });
+    db.run(`UPDATE leads SET status = 'reserved', updated_at = ? WHERE customer_id = ? AND vehicle_id = ? AND status NOT IN ('won','lost')`, [
+      localDateTime(),
+      customer_id,
+      vehicle_id,
+    ]);
+    audit(db, ctx, {
+      action: 'create',
+      module: 'reservations',
+      record_type: 'reservation',
+      record_id: id,
+      label: `${reservation_no} / ${v.stock_no}`,
+      new: { customer_id, vehicle_id, amount, expiry_date },
+    });
     return { id, reservation_no, payment_id: receipt?.id ?? null, receipt_no: receipt?.receipt_no ?? null };
   });
 }
@@ -176,12 +233,35 @@ export function cancelReservation(db: Db, ctx: Ctx, input: { id: number; reason:
   const paid = db.scalar<number>(`SELECT COALESCE(SUM(amount),0) FROM payments WHERE reservation_id = ? AND kind = 'reservation' AND status = 'valid'`, [id]);
   if (refund > paid) fail('VALIDATION', 'المبلغ المسترد لا يمكن أن يتجاوز العربون المدفوع.');
   return db.tx(() => {
-    db.run(`UPDATE reservations SET status = 'cancelled', cancel_reason = ?, refund_amount = ?, updated_at = ? WHERE id = ?`, [reason, refund, localDateTime(), id]);
-    if (r.status === 'active') db.run(`UPDATE vehicles SET status = 'available', updated_at = ? WHERE id = ? AND status = 'reserved'`, [localDateTime(), r.vehicle_id]);
+    db.run(`UPDATE reservations SET status = 'cancelled', cancel_reason = ?, refund_amount = ?, updated_at = ? WHERE id = ?`, [
+      reason,
+      refund,
+      localDateTime(),
+      id,
+    ]);
+    if (r.status === 'active')
+      db.run(`UPDATE vehicles SET status = 'available', updated_at = ? WHERE id = ? AND status = 'reserved'`, [localDateTime(), r.vehicle_id]);
     if (refund > 0) {
-      insertPayment(db, ctx, { customer_id: r.customer_id, reservation_id: id, kind: 'refund', pay_date: today(ctx), amount: refund, method: V.oneOf(input.method, PAY_METHODS, 'طريقة الدفع', 'cash'), notes: `رد عربون الحجز ${r.reservation_no}` });
+      insertPayment(db, ctx, {
+        customer_id: r.customer_id,
+        reservation_id: id,
+        kind: 'refund',
+        pay_date: today(ctx),
+        amount: refund,
+        method: V.oneOf(input.method, PAY_METHODS, 'طريقة الدفع', 'cash'),
+        notes: `رد عربون الحجز ${r.reservation_no}`,
+      });
     }
-    audit(db, ctx, { action: 'cancel', module: 'reservations', record_type: 'reservation', record_id: id, label: r.reservation_no, old: { status: r.status }, new: { status: 'cancelled', refund }, details: reason });
+    audit(db, ctx, {
+      action: 'cancel',
+      module: 'reservations',
+      record_type: 'reservation',
+      record_id: id,
+      label: r.reservation_no,
+      old: { status: r.status },
+      new: { status: 'cancelled', refund },
+      details: reason,
+    });
     return { ok: true };
   });
 }
@@ -196,7 +276,15 @@ export function extendReservation(db: Db, ctx: Ctx, input: { id: number; expiry_
   if (expiry < r.reservation_date) fail('VALIDATION', 'تاريخ الانتهاء يجب أن يكون بعد تاريخ الحجز.');
   return db.tx(() => {
     db.run('UPDATE reservations SET expiry_date = ?, updated_at = ? WHERE id = ?', [expiry, localDateTime(), id]);
-    audit(db, ctx, { action: 'extend', module: 'reservations', record_type: 'reservation', record_id: id, label: r.reservation_no, old: { expiry_date: r.expiry_date }, new: { expiry_date: expiry } });
+    audit(db, ctx, {
+      action: 'extend',
+      module: 'reservations',
+      record_type: 'reservation',
+      record_id: id,
+      label: r.reservation_no,
+      old: { expiry_date: r.expiry_date },
+      new: { expiry_date: expiry },
+    });
     return { ok: true };
   });
 }
@@ -251,7 +339,15 @@ export interface SaleCalc {
 }
 
 /** Pure computation of the sale financial breakdown (also used by the UI preview). */
-export function computeSale(i: { list_price: number; discount: number; fees: number; trade_in_value: number; reservation_credit: number; down_payment: number; sale_type: string }): SaleCalc {
+export function computeSale(i: {
+  list_price: number;
+  discount: number;
+  fees: number;
+  trade_in_value: number;
+  reservation_credit: number;
+  down_payment: number;
+  sale_type: string;
+}): SaleCalc {
   const selling_price = i.list_price - i.discount;
   const total_contract_value = selling_price + i.fees;
   const isCash = i.sale_type === 'cash' || i.sale_type === 'trade_in_cash';
@@ -340,12 +436,18 @@ export function createSale(db: Db, ctx: Ctx, input: any) {
   let override_reason: string | null = null;
   if (belowMin) {
     if (!can(ctx, 'sales.override_min_price')) {
-      throw new AppError('BELOW_MIN_PRICE', `سعر البيع (${calc.selling_price / 100}) أقل من الحد الأدنى المسموح (${v.min_price / 100}). ليس لديك صلاحية البيع بأقل من الحد الأدنى.`, {
-        min_price: v.min_price,
-      });
+      throw new AppError(
+        'BELOW_MIN_PRICE',
+        `سعر البيع (${calc.selling_price / 100}) أقل من الحد الأدنى المسموح (${v.min_price / 100}). ليس لديك صلاحية البيع بأقل من الحد الأدنى.`,
+        {
+          min_price: v.min_price,
+        },
+      );
     }
     if (!input.confirm_below_min) {
-      throw new AppError('BELOW_MIN_PRICE_CONFIRM', `تحذير: سعر البيع أقل من الحد الأدنى المسموح (${v.min_price / 100}). يلزم تأكيد التجاوز مع ذكر السبب.`, { min_price: v.min_price });
+      throw new AppError('BELOW_MIN_PRICE_CONFIRM', `تحذير: سعر البيع أقل من الحد الأدنى المسموح (${v.min_price / 100}). يلزم تأكيد التجاوز مع ذكر السبب.`, {
+        min_price: v.min_price,
+      });
     }
     override_reason = V.reqStr(input.override_reason, 'سبب تجاوز الحد الأدنى', 500);
   }
@@ -391,7 +493,10 @@ export function createSale(db: Db, ctx: Ctx, input: any) {
     if (quotation_id) db.run(`UPDATE quotations SET status = 'sold' WHERE id = ?`, [quotation_id]);
     if (reservation?.quotation_id) db.run(`UPDATE quotations SET status = 'sold' WHERE id = ?`, [reservation.quotation_id]);
     db.run(`UPDATE quotations SET status = 'cancelled' WHERE vehicle_id = ? AND status = 'open'`, [vehicle_id]);
-    db.run(`UPDATE leads SET status = 'won', updated_at = ? WHERE customer_id = ? AND status NOT IN ('won','lost') AND (vehicle_id = ? OR vehicle_id IS NULL)`, [localDateTime(), customer_id, vehicle_id]);
+    db.run(
+      `UPDATE leads SET status = 'won', updated_at = ? WHERE customer_id = ? AND status NOT IN ('won','lost') AND (vehicle_id = ? OR vehicle_id IS NULL)`,
+      [localDateTime(), customer_id, vehicle_id],
+    );
 
     let tradeInVehicleId: number | null = null;
     if (isTradeIn) {
@@ -426,10 +531,27 @@ export function createSale(db: Db, ctx: Ctx, input: any) {
       record_type: 'sale',
       record_id: saleId,
       label: `${sale_no} / ${v.stock_no}`,
-      new: { ...calc, sale_type, customer_id, vehicle_id, cost_at_sale: v.actual_cost, min_price: v.min_price, override_reason, contract: contract?.contract_no },
+      new: {
+        ...calc,
+        sale_type,
+        customer_id,
+        vehicle_id,
+        cost_at_sale: v.actual_cost,
+        min_price: v.min_price,
+        override_reason,
+        contract: contract?.contract_no,
+      },
       details: belowMin ? `بيع بأقل من الحد الأدنى: ${override_reason}` : null,
     });
-    return { id: saleId, sale_no, contract_id: contract?.id ?? null, contract_no: contract?.contract_no ?? null, receipts, trade_in_vehicle_id: tradeInVehicleId, ...calc };
+    return {
+      id: saleId,
+      sale_no,
+      contract_id: contract?.id ?? null,
+      contract_no: contract?.contract_no ?? null,
+      receipts,
+      trade_in_vehicle_id: tradeInVehicleId,
+      ...calc,
+    };
   });
 }
 
@@ -440,13 +562,21 @@ export function cancelSale(db: Db, ctx: Ctx, input: { id: number; reason: string
   const s = db.get<any>('SELECT * FROM sales WHERE id = ?', [id]);
   if (!s) fail('NOT_FOUND', 'عملية البيع غير موجودة.');
   if (s.status !== 'active') fail('VALIDATION', 'عملية البيع ملغاة بالفعل.');
-  const collections = db.scalar<number>(`SELECT COUNT(*) FROM payments WHERE sale_id = ? AND kind IN ('installment','early_settlement') AND status = 'valid'`, [id]);
+  const collections = db.scalar<number>(`SELECT COUNT(*) FROM payments WHERE sale_id = ? AND kind IN ('installment','early_settlement') AND status = 'valid'`, [
+    id,
+  ]);
   if (collections) fail('HAS_PAYMENTS', 'لا يمكن إلغاء البيع لوجود أقساط محصلة عليه. يجب إلغاء التحصيلات أولاً.');
-  const ti = db.get<any>(`SELECT t.*, v.status AS vstatus, v.stock_no FROM trade_ins t JOIN vehicles v ON v.id = t.vehicle_id WHERE t.sale_id = ? AND t.status = 'accepted'`, [id]);
+  const ti = db.get<any>(
+    `SELECT t.*, v.status AS vstatus, v.stock_no FROM trade_ins t JOIN vehicles v ON v.id = t.vehicle_id WHERE t.sale_id = ? AND t.status = 'accepted'`,
+    [id],
+  );
   if (ti && !['available', 'preparation', 'maintenance', 'returned'].includes(ti.vstatus)) {
     fail('IN_USE', `لا يمكن إلغاء البيع لأن سيارة الاستبدال (${ti.stock_no}) تم حجزها أو بيعها.`);
   }
-  if (ti && db.scalar<number>(`SELECT COUNT(*) FROM vehicle_expenses WHERE vehicle_id = ? AND deleted_at IS NULL AND source_type = 'manual'`, [ti.vehicle_id])) {
+  if (
+    ti &&
+    db.scalar<number>(`SELECT COUNT(*) FROM vehicle_expenses WHERE vehicle_id = ? AND deleted_at IS NULL AND source_type = 'manual'`, [ti.vehicle_id])
+  ) {
     fail('IN_USE', `لا يمكن إلغاء البيع لوجود تكاليف مسجلة على سيارة الاستبدال (${ti.stock_no}).`);
   }
   return db.tx(() => {
@@ -459,7 +589,10 @@ export function cancelSale(db: Db, ctx: Ctx, input: { id: number; reason: string
       db.run(`UPDATE installments SET is_cancelled = 1, notes = 'ملغي بإلغاء البيع' WHERE contract_id = ?`, [contract.id]);
     }
     // Refund what the customer paid (reservation credit + down payment / cash).
-    const paid = db.scalar<number>(`SELECT COALESCE(SUM(amount),0) FROM payments WHERE sale_id = ? AND kind IN ('reservation','down_payment','cash_sale') AND status = 'valid'`, [id]);
+    const paid = db.scalar<number>(
+      `SELECT COALESCE(SUM(amount),0) FROM payments WHERE sale_id = ? AND kind IN ('reservation','down_payment','cash_sale') AND status = 'valid'`,
+      [id],
+    );
     if (paid > 0) {
       insertPayment(db, ctx, {
         customer_id: s.customer_id,
@@ -472,11 +605,20 @@ export function cancelSale(db: Db, ctx: Ctx, input: { id: number; reason: string
       });
     }
     if (ti) {
-      db.run('UPDATE vehicles SET deleted_at = ?, notes = COALESCE(notes, \'\') || ? WHERE id = ?', [now, ' | أعيدت للعميل بإلغاء البيع', ti.vehicle_id]);
+      db.run("UPDATE vehicles SET deleted_at = ?, notes = COALESCE(notes, '') || ? WHERE id = ?", [now, ' | أعيدت للعميل بإلغاء البيع', ti.vehicle_id]);
       db.run('UPDATE vehicle_expenses SET deleted_at = ? WHERE vehicle_id = ?', [now, ti.vehicle_id]);
       db.run(`UPDATE trade_ins SET status = 'rejected', notes = COALESCE(notes || ' | ', '') || 'أعيدت للعميل بإلغاء البيع' WHERE id = ?`, [ti.id]);
     }
-    audit(db, ctx, { action: 'cancel', module: 'sales', record_type: 'sale', record_id: id, label: s.sale_no, old: { status: 'active' }, new: { status: 'cancelled', refund: paid }, details: reason });
+    audit(db, ctx, {
+      action: 'cancel',
+      module: 'sales',
+      record_type: 'sale',
+      record_id: id,
+      label: s.sale_no,
+      old: { status: 'active' },
+      new: { status: 'cancelled', refund: paid },
+      details: reason,
+    });
     return { ok: true, refunded: paid };
   });
 }
@@ -517,7 +659,13 @@ export function listSales(db: Db, ctx: Ctx, p: ListParams = {}) {
     from: SALE_FROM,
     where: [],
     params: {},
-    sortable: { sale_date: 's.sale_date', selling_price: 's.selling_price', customer_name: 'c.name', gross_profit: fin ? 'gross_profit' : 's.id', sale_no: 's.sale_no' },
+    sortable: {
+      sale_date: 's.sale_date',
+      selling_price: 's.selling_price',
+      customer_name: 'c.name',
+      gross_profit: fin ? 'gross_profit' : 's.id',
+      sale_no: 's.sale_no',
+    },
     defaultSort: 's.sale_date DESC, s.id DESC',
     totals: fin
       ? `COUNT(*) AS count, SUM(s.selling_price) AS selling_price, SUM(s.total_contract_value) AS total_contract_value, SUM(vc.actual_cost) AS actual_cost, SUM(s.selling_price - vc.actual_cost) AS gross_profit`
@@ -553,7 +701,12 @@ export function getSale(db: Db, ctx: Ctx, input: { id: number }) {
       )
     : null;
   const profit = fin
-    ? { actual_cost: sale.actual_cost, gross_profit: sale.gross_profit, gross_margin: marginPct(sale.gross_profit, sale.selling_price), sale_expenses: expenses.reduce((a: number, e: any) => a + e.amount, 0) }
+    ? {
+        actual_cost: sale.actual_cost,
+        gross_profit: sale.gross_profit,
+        gross_margin: marginPct(sale.gross_profit, sale.selling_price),
+        sale_expenses: expenses.reduce((a: number, e: any) => a + e.amount, 0),
+      }
     : null;
   return { sale, payments, tradeIn, contract, expenses, profit };
 }

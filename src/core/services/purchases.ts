@@ -61,7 +61,10 @@ export function updateSupplier(db: Db, ctx: Ctx, input: any) {
   if (!old) fail('NOT_FOUND', 'المورد غير موجود.');
   const s = validateSupplier(input);
   return db.tx(() => {
-    db.run('UPDATE suppliers SET name=:name, supplier_type=:supplier_type, phone=:phone, national_id=:national_id, address=:address, notes=:notes WHERE id=:id', { ...s, id });
+    db.run(
+      'UPDATE suppliers SET name=:name, supplier_type=:supplier_type, phone=:phone, national_id=:national_id, address=:address, notes=:notes WHERE id=:id',
+      { ...s, id },
+    );
     audit(db, ctx, { action: 'update', module: 'purchases', record_type: 'supplier', record_id: id, label: s.name, old, new: s });
     return { id };
   });
@@ -73,7 +76,8 @@ export function deleteSupplier(db: Db, ctx: Ctx, input: { id: number }) {
   const old = db.get<any>('SELECT * FROM suppliers WHERE id = ? AND deleted_at IS NULL', [id]);
   if (!old) fail('NOT_FOUND', 'المورد غير موجود.');
   if (db.scalar('SELECT COUNT(*) FROM purchases WHERE supplier_id = ?', [id])) fail('IN_USE', 'لا يمكن حذف المورد لوجود عمليات شراء مرتبطة به.');
-  if (db.scalar('SELECT COUNT(*) FROM vehicle_expenses WHERE supplier_id = ? AND deleted_at IS NULL', [id])) fail('IN_USE', 'لا يمكن حذف المورد لوجود تكاليف سيارات مرتبطة به.');
+  if (db.scalar('SELECT COUNT(*) FROM vehicle_expenses WHERE supplier_id = ? AND deleted_at IS NULL', [id]))
+    fail('IN_USE', 'لا يمكن حذف المورد لوجود تكاليف سيارات مرتبطة به.');
   return db.tx(() => {
     db.run('UPDATE suppliers SET deleted_at = ? WHERE id = ?', [localDateTime(), id]);
     audit(db, ctx, { action: 'delete', module: 'purchases', record_type: 'supplier', record_id: id, label: old.name, old });
@@ -140,7 +144,14 @@ export function createPurchase(db: Db, ctx: Ctx, input: any) {
       source_id: pid,
     });
     for (const c of costs) {
-      insertCostLine(db, ctx, { vehicle_id: v.id, expense_date: purchase_date, category: c.category, description: c.description, amount: c.amount, payment_method: 'cash' });
+      insertCostLine(db, ctx, {
+        vehicle_id: v.id,
+        expense_date: purchase_date,
+        category: c.category,
+        description: c.description,
+        amount: c.amount,
+        payment_method: 'cash',
+      });
     }
     if (paid > 0) {
       db.run('INSERT INTO purchase_payments(purchase_id, pay_date, amount, method, reference, created_by) VALUES (?,?,?,?,?,?)', [
@@ -219,7 +230,14 @@ export function addPurchasePayment(db: Db, ctx: Ctx, input: any) {
       V.str(input.notes, 'ملاحظات', { max: 500 }),
       ctx.user.id || null,
     ]).lastId;
-    audit(db, ctx, { action: 'supplier_payment', module: 'purchases', record_type: 'purchase', record_id: id, label: pur.purchase_no, new: { amount, pay_date, method } });
+    audit(db, ctx, {
+      action: 'supplier_payment',
+      module: 'purchases',
+      record_type: 'purchase',
+      record_id: id,
+      label: pur.purchase_no,
+      new: { amount, pay_date, method },
+    });
     return { id: pid };
   });
 }
@@ -234,7 +252,11 @@ export function updatePurchasePrice(db: Db, ctx: Ctx, input: { id: number; purch
   if (price < pur.paid_amount) fail('VALIDATION', 'سعر الشراء لا يمكن أن يقل عن المبلغ المدفوع للمورد.');
   return db.tx(() => {
     db.run('UPDATE purchases SET purchase_price = ? WHERE id = ?', [price, id]);
-    db.run(`UPDATE vehicle_expenses SET amount = ?, updated_at = ? WHERE source_type = 'purchase' AND source_id = ? AND deleted_at IS NULL`, [price, localDateTime(), id]);
+    db.run(`UPDATE vehicle_expenses SET amount = ?, updated_at = ? WHERE source_type = 'purchase' AND source_id = ? AND deleted_at IS NULL`, [
+      price,
+      localDateTime(),
+      id,
+    ]);
     audit(db, ctx, {
       action: 'cost_change',
       module: 'purchases',

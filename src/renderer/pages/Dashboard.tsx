@@ -68,29 +68,74 @@ export function DashboardPage() {
       <div className="section-title">المخزون</div>
       <div className="grid-4">
         <Kpi label="سيارات متاحة للبيع" value={fmtNum(inv.available)} sub={`${fmtNum(inv.in_stock)} سيارة بالمعرض إجمالاً`} onClick={() => nav('/vehicles')} />
-        <Kpi label="سيارات محجوزة" value={fmtNum(inv.reserved)} sub={`${fmtNum(inv.in_preparation)} تحت التجهيز/الصيانة`} onClick={() => nav('/reservations')} />
-        <Kpi label="سيارات مباعة" value={fmtNum(inv.sold)} sub={`جديدة بالمخزون: ${fmtNum(inv.new_in_stock)} • مستعملة: ${fmtNum(inv.used_in_stock)}`} onClick={() => nav('/sales')} />
+        <Kpi
+          label="سيارات محجوزة"
+          value={fmtNum(inv.reserved)}
+          sub={`${fmtNum(inv.in_preparation)} تحت التجهيز/الصيانة`}
+          onClick={() => nav('/reservations')}
+        />
+        <Kpi
+          label="سيارات مباعة"
+          value={fmtNum(inv.sold)}
+          sub={`جديدة بالمخزون: ${fmtNum(inv.new_in_stock)} • مستعملة: ${fmtNum(inv.used_in_stock)}`}
+          onClick={() => nav('/sales')}
+        />
         <Kpi
           label={fin ? 'قيمة المخزون (بالتكلفة)' : 'قيمة المخزون (بسعر البيع)'}
           value={<Money v={fin ? inv.inventory_cost : inv.inventory_asking} />}
-          sub={fin ? <>بسعر البيع: <Money v={inv.inventory_asking} /></> : undefined}
+          sub={
+            fin ? (
+              <>
+                بسعر البيع: <Money v={inv.inventory_asking} />
+              </>
+            ) : undefined
+          }
         />
       </div>
 
       <div className="section-title">المبيعات</div>
       <div className="grid-4">
         <Kpi label="مبيعات اليوم" value={<Money v={d.sales.today.revenue} />} sub={`${fmtNum(d.sales.today.count)} سيارة`} tone="accent" />
-        <Kpi label="مبيعات الشهر" value={<Money v={d.sales.month.revenue} />} sub={`${fmtNum(d.sales.month.count)} سيارة • متوسط البيع ${fmtMoney(d.sales.month.average)}`} tone="accent" />
-        <Kpi label="ربح الشهر" value={fin ? <Money v={d.sales.month.profit} /> : '—'} sub={fin ? `هامش ${fmtPct(d.sales.month.margin)}` : 'يتطلب صلاحية الأرباح'} />
+        <Kpi
+          label="مبيعات الشهر"
+          value={<Money v={d.sales.month.revenue} />}
+          sub={`${fmtNum(d.sales.month.count)} سيارة • متوسط البيع ${fmtMoney(d.sales.month.average)}`}
+          tone="accent"
+        />
+        <Kpi
+          label="ربح الشهر"
+          value={fin ? <Money v={d.sales.month.profit} /> : '—'}
+          sub={fin ? `هامش ${fmtPct(d.sales.month.margin)}` : 'يتطلب صلاحية الأرباح'}
+        />
         <Kpi label="متوسط قيمة البيع (الإجمالي)" value={<Money v={d.sales.all.average} />} sub={`${fmtNum(d.sales.all.count)} عملية بيع`} />
       </div>
 
       <div className="section-title">المديونيات والتحصيل</div>
       <div className="grid-4">
-        <Kpi label="إجمالي المستحق على العملاء" value={<Money v={rec.outstanding} />} sub={<>محصل هذا الشهر: <Money v={rec.collected_month} /></>} onClick={() => nav('/installments')} />
-        <Kpi label="أقساط مستحقة اليوم" value={<Money v={rec.due_today} />} sub={`${fmtNum(rec.due_today_count)} قسط`} onClick={() => nav('/installments?tab=due_today')} />
+        <Kpi
+          label="إجمالي المستحق على العملاء"
+          value={<Money v={rec.outstanding} />}
+          sub={
+            <>
+              محصل هذا الشهر: <Money v={rec.collected_month} />
+            </>
+          }
+          onClick={() => nav('/installments')}
+        />
+        <Kpi
+          label="أقساط مستحقة اليوم"
+          value={<Money v={rec.due_today} />}
+          sub={`${fmtNum(rec.due_today_count)} قسط`}
+          onClick={() => nav('/installments?tab=due_today')}
+        />
         <Kpi label="أقساط خلال 7 أيام" value={<Money v={rec.due_7} />} sub={`${fmtNum(rec.due_7_count)} قسط`} onClick={() => nav('/installments?tab=next7')} />
-        <Kpi label="الأقساط المتأخرة" value={<Money v={rec.overdue} />} sub={`${fmtNum(rec.overdue_count)} قسط • ${fmtNum(rec.overdue_customers)} عميل`} tone={rec.overdue > 0 ? 'danger' : undefined} onClick={() => nav('/installments?tab=overdue')} />
+        <Kpi
+          label="الأقساط المتأخرة"
+          value={<Money v={rec.overdue} />}
+          sub={`${fmtNum(rec.overdue_count)} قسط • ${fmtNum(rec.overdue_customers)} عميل`}
+          tone={rec.overdue > 0 ? 'danger' : undefined}
+          onClick={() => nav('/installments?tab=overdue')}
+        />
       </div>
 
       {fin && (
@@ -219,7 +264,9 @@ export function DashboardPage() {
                 حجز {r.reservation_no} ({r.customer_name} — {r.brand} {r.model}) ينتهي في {fmtDate(r.expiry_date)}
               </div>
             ))}
-            {d.alerts.follow_ups_due === 0 && inv.stale_count === 0 && d.alerts.reservations_expiring.length === 0 && <div className="muted">لا توجد تنبيهات حالياً.</div>}
+            {d.alerts.follow_ups_due === 0 && inv.stale_count === 0 && d.alerts.reservations_expiring.length === 0 && (
+              <div className="muted">لا توجد تنبيهات حالياً.</div>
+            )}
           </div>
         </div>
       </div>

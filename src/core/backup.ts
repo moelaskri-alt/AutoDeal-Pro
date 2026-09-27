@@ -17,7 +17,9 @@ export interface BackupInfo {
 }
 
 function stamp(): string {
-  return localDateTime().replace(/[-: ]/g, '').replace(/^(\d{8})(\d{6})$/, '$1-$2');
+  return localDateTime()
+    .replace(/[-: ]/g, '')
+    .replace(/^(\d{8})(\d{6})$/, '$1-$2');
 }
 
 /** Consistent online backup using SQLite's VACUUM INTO (works while the app is running). */
@@ -81,7 +83,9 @@ export function validateBackupFile(file: string): { schema_version: number; vehi
     raw = new DatabaseSync(file, { readOnly: true });
     const ok = (raw.prepare('PRAGMA integrity_check').get() as any)?.integrity_check;
     if (ok !== 'ok') throw new AppError('BACKUP_CORRUPT', 'ملف النسخة الاحتياطية تالف ولا يمكن استعادته.');
-    const hasTable = raw.prepare("SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name IN ('schema_migrations','vehicles','sales','users')").get() as any;
+    const hasTable = raw
+      .prepare("SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name IN ('schema_migrations','vehicles','sales','users')")
+      .get() as any;
     if (hasTable.c < 4) throw new AppError('BACKUP_INVALID', 'الملف المحدد ليس نسخة احتياطية صالحة لبرنامج AutoDeal Pro.');
     const v = (raw.prepare('SELECT MAX(version) AS v FROM schema_migrations').get() as any).v as number;
     if (v > SCHEMA_VERSION) throw new AppError('BACKUP_NEWER', 'هذه النسخة الاحتياطية من إصدار أحدث من البرنامج. يرجى تحديث البرنامج أولاً.');
