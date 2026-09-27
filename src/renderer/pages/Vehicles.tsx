@@ -28,7 +28,7 @@ import {
 import { Icon } from '../components/Icon';
 import { fmtDate, fmtMoney, fmtNum, fmtPct, label, fmtDateTime } from '../../core/format';
 import { CostCardView } from './Costs';
-import { AuditTrail } from './Users';
+import { AuditTrail } from '../components/AuditLog';
 
 const imgCache = new Map<number, string>();
 export function VehicleImage({ id, className = 'thumb', alt = '' }: { id: number | null | undefined; className?: string; alt?: string }) {

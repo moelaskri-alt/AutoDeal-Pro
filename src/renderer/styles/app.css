@@ -1142,3 +1142,256 @@ table.dt tr.cancelled td {
   width: 158px;
   flex: 0 0 auto;
 }
+
+/* ---------------------------------------------------------------- audit log */
+/* Compact table: fixed-content columns shrink to fit, text columns wrap (never widen the table). */
+.audit-table table.dt td {
+  vertical-align: top;
+}
+.audit-table .c-date,
+.audit-table .c-module,
+.audit-table .c-action {
+  width: 1%;
+  white-space: nowrap;
+}
+.audit-table .c-user {
+  width: 1%;
+}
+.audit-clip {
+  display: block;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.audit-table table.dt td.c-record,
+.audit-table table.dt td.c-val,
+.audit-table table.dt td.c-details {
+  white-space: normal;
+}
+.audit-table .c-record {
+  width: 13%;
+  min-width: 115px;
+}
+.audit-table .c-val {
+  width: 14%;
+  min-width: 115px;
+}
+.audit-table .c-details {
+  width: 34%;
+  min-width: 210px;
+}
+/* Narrow windows: the old/new summaries move to the details modal only, so the table keeps its
+   most important columns visible without internal scrolling. */
+@media (max-width: 1240px) {
+  .audit-table .c-val {
+    display: none;
+  }
+}
+.clamp-1,
+.clamp-2 {
+  /* -webkit-box reports its one-line width as its minimum width, which would force the table wide;
+     inline-size containment makes the column rules (not the text length) decide the width. */
+  contain: inline-size;
+  width: 100%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.clamp-1 {
+  -webkit-line-clamp: 1;
+}
+.clamp-2 {
+  -webkit-line-clamp: 2;
+}
+.audit-wrap {
+  overflow-wrap: anywhere;
+}
+.audit-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+.audit-cell > div {
+  max-width: 100%;
+}
+.audit-summary {
+  font-weight: 600;
+}
+
+/* details modal */
+.audit-modal .modal-b {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.audit-sec {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+.audit-sec h4 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: var(--primary);
+}
+.audit-kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px 18px;
+}
+.audit-kv-item {
+  min-width: 0;
+}
+.audit-kv-item .k {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-bottom: 2px;
+}
+.audit-kv-item .v {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.audit-kv + .audit-block,
+.audit-kv + .audit-note {
+  margin-top: 12px;
+}
+.audit-summary-box {
+  background: var(--primary-50);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.audit-summary-main {
+  font-weight: 700;
+  font-size: 1.02rem;
+  overflow-wrap: anywhere;
+}
+.audit-note {
+  margin-top: 10px;
+}
+.audit-note-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 2px;
+}
+.audit-note-row > span {
+  flex: 1;
+  min-width: 0;
+}
+.audit-mono {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.85rem;
+  direction: ltr;
+  unicode-bidi: plaintext;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.audit-note-row .audit-mono {
+  background: #f7f9fc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: block;
+  text-align: left;
+}
+.audit-copy {
+  flex-shrink: 0;
+}
+.audit-block + .audit-block {
+  margin-top: 10px;
+}
+.audit-block-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  margin-bottom: 6px;
+}
+.audit-mini {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 280px;
+}
+.audit-mini table.dt td {
+  overflow-wrap: anywhere;
+}
+.audit-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.audit-compare-grid > * {
+  min-width: 0;
+}
+.audit-compare tr.changed td {
+  background: #fffdf5;
+}
+.audit-before,
+.audit-after {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+.audit-before {
+  background: var(--danger-50);
+  color: #a52a1f;
+}
+.audit-after {
+  background: var(--accent-50);
+  color: #0b7a5b;
+  font-weight: 700;
+}
+.audit-perm ul {
+  margin: 0;
+  padding-inline-start: 20px;
+}
+.audit-perm.added .audit-block-title {
+  color: #0b7a5b;
+}
+.audit-perm.removed .audit-block-title {
+  color: #a52a1f;
+}
+details.audit-tech {
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #fafbfc;
+  min-width: 0;
+}
+details.audit-tech > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #475467;
+}
+.audit-tech-body {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.audit-raw-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.audit-raw pre {
+  direction: ltr;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  max-height: 260px;
+  overflow: auto;
+  margin: 4px 0 0;
+}

@@ -8,7 +8,9 @@ export function Modal({
   children,
   footer,
   size = 'md',
+  className,
 }: {
+  className?: string;
   title: ReactNode;
   onClose: () => void;
   children: ReactNode;
@@ -22,7 +24,7 @@ export function Modal({
   }, [onClose]);
   return (
     <div className="modal-backdrop">
-      <div className={`modal ${size}`} role="dialog" aria-label={typeof title === 'string' ? title : undefined}>
+      <div className={`modal ${size} ${className ?? ''}`} role="dialog" aria-label={typeof title === 'string' ? title : undefined}>
         <div className="modal-h">
           <h3>{title}</h3>
           <button className="x-btn" onClick={onClose} aria-label="إغلاق">
@@ -232,8 +234,8 @@ const BADGE_COLORS: Record<string, string> = {
   used: 'amber',
 };
 
-export function Badge({ group, value, text }: { group?: string; value: string; text?: string }) {
-  const color = BADGE_COLORS[value] ?? 'gray';
+export function Badge({ group, value, text, tone }: { group?: string; value: string; text?: string; tone?: string }) {
+  const color = tone ?? BADGE_COLORS[value] ?? 'gray';
   return <span className={`badge ${color}`}>{text ?? (group ? label(group, value) : value)}</span>;
 }
 

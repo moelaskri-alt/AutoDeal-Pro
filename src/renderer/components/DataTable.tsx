@@ -20,6 +20,8 @@ export interface Col<T = any> {
   /** Column only included in CSV/Excel exports, not shown on screen. */
   exportOnly?: boolean;
   hidden?: boolean;
+  /** Extra class for this column's header and cells (column sizing). */
+  className?: string;
 }
 
 export type FilterDef =
@@ -45,6 +47,7 @@ interface Props<T> {
   defaultSort?: { sort: string; dir: 'asc' | 'desc' };
   pageSize?: number;
   noSearch?: boolean;
+  className?: string;
 }
 
 export function DataTable<T = any>(p: Props<T>) {
@@ -105,7 +108,7 @@ export function DataTable<T = any>(p: Props<T>) {
   };
 
   return (
-    <div className="card">
+    <div className={`card ${p.className ?? ''}`}>
       <div className="toolbar">
         {!p.noSearch && (
           <div className="tb-search">
@@ -212,7 +215,7 @@ export function DataTable<T = any>(p: Props<T>) {
               <thead>
                 <tr>
                   {cols.map((c) => (
-                    <th key={c.key} className={c.sort ? 'sortable' : ''} onClick={() => toggleSort(c)}>
+                    <th key={c.key} className={`${c.sort ? 'sortable' : ''} ${c.className ?? ''}`} onClick={() => toggleSort(c)}>
                       {c.label}
                       {sort.sort === c.sort && c.sort ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}
                     </th>
@@ -223,7 +226,7 @@ export function DataTable<T = any>(p: Props<T>) {
                 {data.rows.map((r: any, i) => (
                   <tr key={r.id ?? i} className={`${p.onRowClick ? 'clickable' : ''} ${p.rowClass?.(r) ?? ''}`} onClick={() => p.onRowClick?.(r)}>
                     {cols.map((c) => (
-                      <td key={c.key} className={`${c.num ? 'num' : ''} ${c.wrap ? 'wrap' : 'nowrap'}`}>
+                      <td key={c.key} className={`${c.num ? 'num' : ''} ${c.wrap ? 'wrap' : 'nowrap'} ${c.className ?? ''}`}>
                         {c.render ? c.render(r) : (r[c.key] ?? '—')}
                       </td>
                     ))}

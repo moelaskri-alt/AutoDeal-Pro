@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { call, useApi } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useAction } from '../lib/actions';
-import { DataTable, type Col } from '../components/DataTable';
-import { Badge, Field, Modal, PageHeader, Select, Spinner, Tabs, TextInput, optionsOf } from '../components/common';
+import { Badge, Field, Modal, PageHeader, Select, Spinner, Tabs, TextInput } from '../components/common';
 import { Icon } from '../components/Icon';
 import { fmtDateTime, label } from '../../core/format';
+import { AuditTrail } from '../components/AuditLog';
 
 export function UsersPage() {
   const { can } = useAuth();
@@ -290,96 +290,5 @@ function RolesTab() {
         </div>
       )}
     </div>
-  );
-}
-
-function short(json: string | null) {
-  if (!json) return '';
-  try {
-    const o = JSON.parse(json);
-    if (Array.isArray(o)) return `${o.length} عنصر`;
-    if (typeof o !== 'object' || o === null) return String(o);
-    return Object.entries(o)
-      .slice(0, 6)
-      .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v).slice(0, 40) : v}`)
-      .join(' • ');
-  } catch {
-    return json.slice(0, 80);
-  }
-}
-
-export function AuditTrail({ filters }: { filters?: Record<string, any> }) {
-  const [detail, setDetail] = useState<any | null>(null);
-  const cols: Col[] = [
-    { key: 'created_at', label: 'التاريخ والوقت', render: (r) => <span className="num">{fmtDateTime(r.created_at)}</span>, exportType: 'text' },
-    { key: 'username', label: 'المستخدم' },
-    { key: 'module', label: 'الوحدة', render: (r) => label('module', r.module), exportValue: (r) => label('module', r.module) },
-    {
-      key: 'action',
-      label: 'العملية',
-      render: (r) => (
-        <Badge
-          value={['delete', 'cancel', 'void', 'override_min_price', 'login_failed'].includes(r.action) ? 'overdue' : 'open'}
-          text={label('audit_action', r.action)}
-        />
-      ),
-      exportValue: (r) => label('audit_action', r.action),
-    },
-    { key: 'record_label', label: 'السجل', render: (r) => r.record_label ?? r.record_id ?? '—' },
-    { key: 'old_value', label: 'القيمة القديمة', wrap: true, render: (r) => <span className="small muted">{short(r.old_value)}</span> },
-    { key: 'new_value', label: 'القيمة الجديدة', wrap: true, render: (r) => <span className="small">{short(r.new_value)}</span> },
-    { key: 'details', label: 'تفاصيل', wrap: true },
-  ];
-  return (
-    <>
-      <DataTable
-        method="audit.list"
-        columns={cols}
-        baseFilters={filters}
-        exportTitle="سجل المراجعة"
-        searchPlaceholder="بحث بالسجل أو المستخدم أو التفاصيل..."
-        filters={
-          filters
-            ? []
-            : [
-                { key: 'module', label: 'الوحدة', options: optionsOf('module') },
-                { key: 'action', label: 'العملية', options: optionsOf('audit_action') },
-                { key: 'dates', label: 'الفترة', type: 'dates' },
-              ]
-        }
-        onRowClick={setDetail}
-        empty={{ icon: 'shield', title: 'لا توجد عمليات مسجلة' }}
-      />
-      {detail && (
-        <Modal size="lg" title={`${label('audit_action', detail.action)} — ${label('module', detail.module)}`} onClose={() => setDetail(null)}>
-          <div className="stack">
-            <div className="muted">
-              {fmtDateTime(detail.created_at)} • {detail.username} • {detail.record_label ?? detail.record_id}
-            </div>
-            {detail.details && <div className="alert info">{detail.details}</div>}
-            <div className="grid-2">
-              <div>
-                <div className="bold">القيمة القديمة</div>
-                <pre
-                  className="summary-box"
-                  style={{ direction: 'ltr', textAlign: 'left', whiteSpace: 'pre-wrap', fontSize: 12, maxHeight: 360, overflow: 'auto' }}
-                >
-                  {detail.old_value ? JSON.stringify(JSON.parse(detail.old_value), null, 2) : '—'}
-                </pre>
-              </div>
-              <div>
-                <div className="bold">القيمة الجديدة</div>
-                <pre
-                  className="summary-box"
-                  style={{ direction: 'ltr', textAlign: 'left', whiteSpace: 'pre-wrap', fontSize: 12, maxHeight: 360, overflow: 'auto' }}
-                >
-                  {detail.new_value ? JSON.stringify(JSON.parse(detail.new_value), null, 2) : '—'}
-                </pre>
-              </div>
-            </div>
-          </div>
-        </Modal>
-      )}
-    </>
   );
 }
