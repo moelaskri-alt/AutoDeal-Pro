@@ -1,0 +1,78 @@
+/** Permission catalogue and default role matrix. Enforced in the core layer (main process). */
+
+export const PERMISSIONS: { code: string; module: string; name_ar: string }[] = [
+  { code: 'dashboard.view', module: 'dashboard', name_ar: 'عرض لوحة التحكم' },
+  { code: 'vehicles.view', module: 'vehicles', name_ar: 'عرض السيارات' },
+  { code: 'vehicles.manage', module: 'vehicles', name_ar: 'إضافة وتعديل السيارات' },
+  { code: 'vehicles.pricing', module: 'vehicles', name_ar: 'تعديل أسعار السيارات' },
+  { code: 'vehicles.delete', module: 'vehicles', name_ar: 'حذف السيارات' },
+  { code: 'costs.view', module: 'costs', name_ar: 'عرض تكاليف السيارات' },
+  { code: 'costs.manage', module: 'costs', name_ar: 'تسجيل وتعديل تكاليف السيارات' },
+  { code: 'purchases.view', module: 'purchases', name_ar: 'عرض المشتريات' },
+  { code: 'purchases.manage', module: 'purchases', name_ar: 'تسجيل المشتريات ومدفوعات الموردين' },
+  { code: 'customers.view', module: 'customers', name_ar: 'عرض العملاء' },
+  { code: 'customers.manage', module: 'customers', name_ar: 'إضافة وتعديل العملاء' },
+  { code: 'customers.delete', module: 'customers', name_ar: 'حذف العملاء' },
+  { code: 'leads.view', module: 'leads', name_ar: 'عرض العملاء المحتملين' },
+  { code: 'leads.manage', module: 'leads', name_ar: 'إدارة العملاء المحتملين والمتابعات' },
+  { code: 'quotations.view', module: 'quotations', name_ar: 'عرض عروض الأسعار' },
+  { code: 'quotations.manage', module: 'quotations', name_ar: 'إنشاء وإدارة عروض الأسعار' },
+  { code: 'reservations.view', module: 'reservations', name_ar: 'عرض الحجوزات' },
+  { code: 'reservations.manage', module: 'reservations', name_ar: 'إنشاء الحجوزات' },
+  { code: 'reservations.cancel', module: 'reservations', name_ar: 'إلغاء الحجوزات' },
+  { code: 'sales.view', module: 'sales', name_ar: 'عرض المبيعات' },
+  { code: 'sales.create', module: 'sales', name_ar: 'إنشاء عمليات البيع' },
+  { code: 'sales.cancel', module: 'sales', name_ar: 'إلغاء عمليات البيع' },
+  { code: 'sales.override_min_price', module: 'sales', name_ar: 'البيع بأقل من الحد الأدنى للسعر' },
+  { code: 'sales.deliver', module: 'sales', name_ar: 'تسليم السيارات' },
+  { code: 'installments.view', module: 'installments', name_ar: 'عرض الأقساط والعقود' },
+  { code: 'installments.manage', module: 'installments', name_ar: 'إعادة جدولة وتسوية العقود' },
+  { code: 'payments.view', module: 'payments', name_ar: 'عرض التحصيلات' },
+  { code: 'payments.create', module: 'payments', name_ar: 'تسجيل التحصيلات' },
+  { code: 'payments.void', module: 'payments', name_ar: 'إلغاء التحصيلات' },
+  { code: 'tradeins.view', module: 'tradeins', name_ar: 'عرض الاستبدال' },
+  { code: 'tradeins.manage', module: 'tradeins', name_ar: 'تقييم وقبول سيارات الاستبدال' },
+  { code: 'expenses.view', module: 'expenses', name_ar: 'عرض المصروفات' },
+  { code: 'expenses.manage', module: 'expenses', name_ar: 'تسجيل وتعديل المصروفات' },
+  { code: 'reports.view', module: 'reports', name_ar: 'عرض التقارير' },
+  { code: 'reports.financial', module: 'reports', name_ar: 'عرض الأرباح والتكاليف' },
+  { code: 'users.manage', module: 'users', name_ar: 'إدارة المستخدمين والصلاحيات' },
+  { code: 'audit.view', module: 'users', name_ar: 'عرض سجل المراجعة' },
+  { code: 'settings.manage', module: 'settings', name_ar: 'تعديل الإعدادات' },
+  { code: 'backup.manage', module: 'backup', name_ar: 'النسخ الاحتياطي والاستعادة' },
+];
+
+export const ROLES: { code: string; name_ar: string }[] = [
+  { code: 'admin', name_ar: 'مدير النظام' },
+  { code: 'manager', name_ar: 'مدير المعرض' },
+  { code: 'sales', name_ar: 'مندوب مبيعات' },
+  { code: 'accountant', name_ar: 'محاسب' },
+  { code: 'viewer', name_ar: 'مشاهد فقط' },
+];
+
+const ALL = PERMISSIONS.map((p) => p.code);
+const VIEW = ALL.filter((c) => c.endsWith('.view'));
+
+export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
+  admin: ALL,
+  manager: [
+    'dashboard.view', 'vehicles.view', 'vehicles.manage', 'vehicles.pricing', 'costs.view',
+    'purchases.view', 'customers.view', 'customers.manage', 'leads.view', 'leads.manage',
+    'quotations.view', 'quotations.manage', 'reservations.view', 'reservations.manage', 'reservations.cancel',
+    'sales.view', 'sales.create', 'sales.cancel', 'sales.override_min_price', 'sales.deliver',
+    'installments.view', 'payments.view', 'tradeins.view', 'tradeins.manage', 'expenses.view',
+    'reports.view', 'reports.financial', 'audit.view',
+  ],
+  sales: [
+    'dashboard.view', 'vehicles.view', 'customers.view', 'customers.manage', 'leads.view', 'leads.manage',
+    'quotations.view', 'quotations.manage', 'reservations.view', 'reservations.manage',
+    'sales.view', 'sales.create', 'sales.deliver', 'installments.view', 'tradeins.view', 'tradeins.manage',
+  ],
+  accountant: [
+    'dashboard.view', 'vehicles.view', 'costs.view', 'costs.manage', 'purchases.view', 'purchases.manage',
+    'customers.view', 'sales.view', 'installments.view', 'installments.manage', 'payments.view', 'payments.create',
+    'payments.void', 'reservations.view', 'tradeins.view', 'expenses.view', 'expenses.manage', 'reports.view',
+    'reports.financial', 'backup.manage',
+  ],
+  viewer: VIEW,
+};
